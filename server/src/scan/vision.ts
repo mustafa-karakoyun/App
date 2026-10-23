@@ -18,9 +18,16 @@ export const shelfOutputSchema = z.object({
 
 export type ShelfOutput = z.infer<typeof shelfOutputSchema>;
 
+export interface VisionUsage {
+  input_tokens: number;
+  output_tokens: number;
+}
+
 export interface VisionProvider {
   readonly name: string;
   readShelf(image: Buffer, mimeType: string): Promise<ShelfOutput>;
+  /** Son çağrının token kullanımı (maliyet ölçümü için); sağlayıcı bildirmiyorsa null. */
+  lastUsage?: VisionUsage | null;
 }
 
 export const SHELF_PROMPT = `Bu fotoğraf bir kitaplık rafını gösteriyor. Sırtı görünen her kitabı soldan sağa sırayla listele.
@@ -61,6 +68,7 @@ const OPENAI_JSON_SCHEMA = {
 
 export class OpenAIVisionProvider implements VisionProvider {
   readonly name = 'openai';
+  lastUsage: VisionUsage | null = null;
   private readonly client: OpenAI;
 
   constructor(
@@ -86,6 +94,9 @@ export class OpenAIVisionProvider implements VisionProvider {
         format: { type: 'json_schema', name: 'shelf_books', schema: OPENAI_JSON_SCHEMA, strict: true },
       },
     });
+    this.lastUsage = response.usage
+      ? { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens }
+      : null;
     return shelfOutputSchema.parse(JSON.parse(response.output_text));
   }
 }

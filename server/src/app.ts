@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
@@ -45,8 +46,10 @@ export async function buildApp(deps: AppDeps, opts: { logger?: boolean } = {}) {
   await app.register(cors, { origin: true });
   await app.register(jwt, { secret: deps.config.JWT_SECRET });
   await app.register(multipart, { limits: { fileSize: 12 * 1024 * 1024, files: 1 } });
+  const uploadRoot = path.resolve(deps.config.UPLOAD_DIR);
+  mkdirSync(uploadRoot, { recursive: true });
   await app.register(fastifyStatic, {
-    root: path.resolve(deps.config.UPLOAD_DIR),
+    root: uploadRoot,
     prefix: '/uploads/',
     decorateReply: false,
   });
