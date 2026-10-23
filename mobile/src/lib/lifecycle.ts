@@ -4,9 +4,8 @@ import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { AppState, Platform } from 'react-native';
 import { subscribe } from '@/db/changes';
-import { pendingBooks } from '@/data/library';
 import { processScanQueue } from '@/data/scans';
-import { pendingChangeCount, scheduleSync, syncNow } from '@/data/sync';
+import { hasPushableChanges, isSyncRunning, scheduleSync, syncNow } from '@/data/sync';
 import { useAuth } from './auth';
 
 async function catchUp() {
@@ -37,9 +36,11 @@ export function useAppLifecycle() {
       wasConnected = connected;
     });
     const unsubscribe = subscribe((tables) => {
-      if (!tables.has('user_books') && !tables.has('locations') && !tables.has('loans') && !tables.has('books')) return;
-      // Pull da değişiklik duyurur; gönderilecek bir şey yoksa yeni tur başlatma.
-      if (pendingChangeCount() > 0 || pendingBooks().length > 0) scheduleSync();
+      if (!tables.has('user_books') && !tables.has('locations') && !tables.has('loans')) return;
+      // Pull da değişiklik duyurur; senkronizasyonun kendi yazmaları ve gönderilemeyecek
+      // kayıtlar (kitabı henüz sunucuda olmayanlar) yeni tur başlatmasın.
+      if (isSyncRunning()) return;
+      if (hasPushableChanges()) scheduleSync();
     });
     return () => {
       appState.remove();

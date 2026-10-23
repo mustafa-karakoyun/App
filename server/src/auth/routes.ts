@@ -26,6 +26,8 @@ function toUser(row: UserRow): AuthUser {
   return { id: row.id, email: row.email ?? '', name: row.name };
 }
 
+const strict = { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } };
+
 export async function authRoutes(app: FastifyInstance, { db, config }: AppDeps) {
   const googleClientIds = (config.GOOGLE_CLIENT_IDS ?? '')
     .split(',')
@@ -38,7 +40,7 @@ export async function authRoutes(app: FastifyInstance, { db, config }: AppDeps) 
     user: toUser(row),
   });
 
-  app.post('/auth/register', async (req, reply) => {
+  app.post('/auth/register', strict, async (req, reply) => {
     const body = registerSchema.parse(req.body);
     const hash = await bcrypt.hash(body.password, 10);
     const { rows } = await db.query<UserRow>(
@@ -51,7 +53,7 @@ export async function authRoutes(app: FastifyInstance, { db, config }: AppDeps) 
     return respond(rows[0]);
   });
 
-  app.post('/auth/login', async (req) => {
+  app.post('/auth/login', strict, async (req) => {
     const body = credentialsSchema.parse(req.body);
     const { rows } = await db.query<UserRow>('SELECT id, email, name, password_hash FROM users WHERE email = $1', [
       body.email,
@@ -62,7 +64,7 @@ export async function authRoutes(app: FastifyInstance, { db, config }: AppDeps) 
     return respond(row);
   });
 
-  app.post('/auth/google', async (req) => {
+  app.post('/auth/google', strict, async (req) => {
     if (!googleClient) throw httpError(501, 'google_disabled', 'Google ile giriş henüz etkin değil');
     const { id_token } = z.object({ id_token: z.string().min(10) }).parse(req.body);
     let payload;

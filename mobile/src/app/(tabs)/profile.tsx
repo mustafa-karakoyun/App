@@ -9,7 +9,7 @@ import { useDbQuery } from '@/db/changes';
 import { statusCounts } from '@/data/library';
 import { listLocations } from '@/data/locations';
 import { fetchQuota } from '@/data/scans';
-import { lastSyncAt, pendingChangeCount, syncNow, useSyncStatus, wipeLocalData } from '@/data/sync';
+import { lastSyncAt, pendingChangeCount, syncNow, useSyncStatus } from '@/data/sync';
 import { API_URL } from '@/lib/config';
 import { confirm } from '@/lib/confirm';
 import { deleteAccount, signOut, useAuth } from '@/lib/auth';
@@ -44,7 +44,7 @@ export default function ProfileScreen() {
   const logout = async () => {
     const ok = await confirm({
       title: 'Çıkış yapılsın mı?',
-      message: 'Kitapların bu cihazda kalır. Tekrar giriş yaptığında yedekle birleşir.',
+      message: 'Kitapların bu cihazda kalır. Aynı hesapla tekrar giriş yaptığında yedekle birleşir.',
       confirmLabel: 'Çıkış yap',
     });
     if (!ok) return;
@@ -63,7 +63,6 @@ export default function ProfileScreen() {
     if (!ok) return;
     try {
       await deleteAccount();
-      wipeLocalData();
       toast('Hesabın silindi');
     } catch (err) {
       toast((err as Error).message);

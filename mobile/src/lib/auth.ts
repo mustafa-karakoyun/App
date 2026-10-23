@@ -1,6 +1,7 @@
 import type { AuthResponse, AuthUser } from '@kitaplik/shared';
 import { useSyncExternalStore } from 'react';
 import { getKv, setKv } from '@/data/kv';
+import { wipeLocalData } from '@/data/wipe';
 import { api, setApiToken, setUnauthorizedHandler } from './api';
 import { getSecure, setSecure } from './storage';
 
@@ -47,8 +48,12 @@ export async function restoreSession() {
 async function applySession(res: AuthResponse) {
   await setSecure(TOKEN_KEY, res.token);
   setApiToken(res.token);
-  // Farklı bir hesaba geçildiyse o hesabın tüm verisini baştan çek.
-  if (getKv('auth.user_id') !== res.user.id) setKv('sync.last_pull', null);
+  // Farklı bir hesaba geçildiyse önceki hesabın kitapları bu cihazdan kalkar (onlar
+  // kendi yedeğinde duruyor), yeni hesabın verisi baştan çekilir. Daha önce hiç
+  // giriş yapılmadıysa yerel kütüphane yeni hesaba aktarılmak üzere korunur.
+  const previous = getKv('auth.user_id');
+  if (previous && previous !== res.user.id) await wipeLocalData();
+  else if (previous !== res.user.id) setKv('sync.last_pull', null);
   setKv('auth.user_id', res.user.id);
   setKv('auth.user', JSON.stringify(res.user));
   setState({ ready: true, user: res.user });
@@ -75,7 +80,7 @@ export async function signOut() {
 
 export async function deleteAccount() {
   await api('/auth/me', { method: 'DELETE' });
+  await wipeLocalData();
   setKv('auth.user_id', null);
-  setKv('sync.last_pull', null);
   await signOut();
 }

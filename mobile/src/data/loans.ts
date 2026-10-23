@@ -99,8 +99,26 @@ export async function returnLoan(loanId: string) {
   notifyChange('loans');
 }
 
-/** Başka cihazdan gelen açık ödünçler için bu cihazda da hatırlatma kurar. */
+/**
+ * Hatırlatmaları kayıtlarla eşitler: başka cihazdan gelen açık ödünçlere hatırlatma
+ * kurar, başka cihazda iade edilen ya da silinenlerin hatırlatmasını iptal eder.
+ */
 export async function ensureReminders() {
+  const stale = db
+    .select({
+      id: loans.id,
+      notificationId: loans.notificationId,
+      returnedAt: loans.returnedAt,
+      deletedAt: loans.deletedAt,
+    })
+    .from(loans)
+    .all()
+    .filter((l) => l.notificationId && (l.returnedAt || l.deletedAt));
+  for (const l of stale) {
+    await cancelReminder(l.notificationId!);
+    db.update(loans).set({ notificationId: null }).where(eq(loans.id, l.id)).run();
+  }
+
   const open = activeLoans().filter((l) => l.loan.dueAt && !l.loan.notificationId);
   for (const { loan, book, userBookId } of open) {
     const id = await scheduleLoanReminder({

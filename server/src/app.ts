@@ -3,6 +3,7 @@ import path from 'node:path';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import multipart from '@fastify/multipart';
+import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
@@ -44,6 +45,12 @@ export async function buildApp(deps: AppDeps, opts: { logger?: boolean } = {}) {
   });
 
   await app.register(cors, { origin: true });
+  await app.register(rateLimit, {
+    max: 300,
+    timeWindow: '1 minute',
+    errorResponseBuilder: (_req, ctx) =>
+      new HttpError(429, 'rate_limited', `Çok fazla istek. ${Math.ceil(ctx.ttl / 1000)} saniye sonra tekrar dene.`),
+  });
   await app.register(jwt, { secret: deps.config.JWT_SECRET });
   await app.register(multipart, { limits: { fileSize: 12 * 1024 * 1024, files: 1 } });
   const uploadRoot = path.resolve(deps.config.UPLOAD_DIR);

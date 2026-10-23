@@ -3,7 +3,7 @@ import { eq, inArray, lte } from 'drizzle-orm';
 import { useSyncExternalStore } from 'react';
 import { db } from '@/db/client';
 import { notifyChange } from '@/db/changes';
-import { books, loans, locations, outbox, userBooks } from '@/db/schema';
+import { loans, locations, outbox, userBooks } from '@/db/schema';
 import { api, ApiError, fileFormData, isOffline } from '@/lib/api';
 import { currentUser } from '@/lib/auth';
 import { getKv, setKv } from './kv';
@@ -46,11 +46,36 @@ export function pendingChangeCount(): number {
   ).size;
 }
 
+/**
+ * Şu an gönderilebilecek değişiklik var mı? Kitabı henüz sunucuda olmayan kayıtlar
+ * sayılmaz; onlar için tur başlatmak sonsuz döngü yaratırdı.
+ */
+export function hasPushableChanges(): boolean {
+  const queued = db.select().from(outbox).all();
+  if (queued.length === 0) return false;
+  if (queued.some((q) => q.tableName !== 'user_books')) return true;
+  const pending = new Set(pendingBooks().map((b) => b.id));
+  if (pending.size === 0) return true;
+  const ids = [...new Set(queued.map((q) => q.recordId))];
+  const rows = db.select({ bookId: userBooks.bookId }).from(userBooks).where(inArray(userBooks.id, ids)).all();
+  return rows.some((r) => !pending.has(r.bookId));
+}
+
+export function isSyncRunning(): boolean {
+  return running !== null;
+}
+
+// Hiçbir kaynakta bulunamayan ISBN'leri her turda yeniden sorma.
+const notFoundAt = new Map<string, number>();
+const NOT_FOUND_RETRY_MS = 6 * 60 * 60 * 1000;
+
 /** Çevrimdışı eklenen kitapları sunucu kataloğuyla eşler. Hesap gerekmez (ISBN araması açık). */
 async function resolvePendingBooks() {
   for (const book of pendingBooks()) {
     try {
       if (book.syncState === 'pending_isbn' && book.isbn13) {
+        const last = notFoundAt.get(book.isbn13);
+        if (last && Date.now() - last < NOT_FOUND_RETRY_MS) continue;
         const found = await api<Book>(`/books/isbn/${book.isbn13}`);
         upsertCatalogBooks([found]);
         replaceBookId(book.id, found.id);
@@ -73,7 +98,11 @@ async function resolvePendingBooks() {
     } catch (err) {
       if (isOffline(err)) throw err;
       // 404: kitap hiçbir kaynakta yok; kullanıcı bilgileri elle girene kadar beklemede kalır.
-      if (!(err instanceof ApiError && err.status === 404)) console.warn('Kitap eşlenemedi', err);
+      if (err instanceof ApiError && err.status === 404) {
+        if (book.isbn13) notFoundAt.set(book.isbn13, Date.now());
+      } else {
+        console.warn('Kitap eşlenemedi', err);
+      }
     }
   }
 }
@@ -264,18 +293,4 @@ export function scheduleSync(delayMs = 4000) {
     timer = null;
     void syncNow();
   }, delayMs);
-}
-
-/** Bu cihazdaki tüm kütüphane verisini siler (çıkışta isteğe bağlı). */
-export function wipeLocalData() {
-  db.$client.withTransactionSync(() => {
-    db.delete(outbox).run();
-    db.delete(loans).run();
-    db.delete(userBooks).run();
-    db.delete(locations).run();
-    db.delete(books).run();
-  });
-  setKv('sync.last_pull', null);
-  setKv('sync.last_success', null);
-  notifyChange('books', 'user_books', 'locations', 'loans');
 }
