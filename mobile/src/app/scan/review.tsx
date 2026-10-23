@@ -13,6 +13,7 @@ import { findOwnedByBookId } from '@/data/library';
 import { addShelfSelections, confirmScan, getPendingScan, removePendingScan } from '@/data/scans';
 import { api } from '@/lib/api';
 import { radius, space, useTheme } from '@/theme';
+import { goBack } from '@/lib/nav';
 
 type Selection = Record<number, number | null>;
 
@@ -91,7 +92,7 @@ export default function ReviewScreen() {
 
   const discard = () => {
     removePendingScan(row.id);
-    router.back();
+    goBack();
   };
 
   const renderItem = (item: ScanItem) => {

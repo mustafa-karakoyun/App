@@ -6,6 +6,7 @@ import { signIn, signUp } from '@/lib/auth';
 import { space, useTheme } from '@/theme';
 import { useToast } from './Toast';
 import { AppText, Button, TextField } from './ui';
+import { goBack } from '@/lib/nav';
 
 export function AuthForm({ mode, reason }: { mode: 'login' | 'register'; reason?: string }) {
   const { c } = useTheme();
@@ -25,8 +26,7 @@ export function AuthForm({ mode, reason }: { mode: 'login' | 'register'; reason?
       if (mode === 'login') await signIn(email.trim(), password);
       else await signUp(email.trim(), password, name.trim() || undefined);
       toast(mode === 'login' ? 'Giriş yapıldı, kütüphanen eşitleniyor' : 'Hesabın hazır, kütüphanen yedekleniyor');
-      if (router.canGoBack()) router.back();
-      else router.replace('/');
+      goBack();
     } catch (err) {
       setError(
         isOffline(err)

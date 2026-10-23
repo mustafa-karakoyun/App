@@ -9,6 +9,7 @@ import { ShelfMode } from '@/components/scan/ShelfMode';
 import { AppText, Button, IconButton, Segmented } from '@/components/ui';
 import { getKv, setKv } from '@/data/kv';
 import { space } from '@/theme';
+import { goBack } from '@/lib/nav';
 
 type Mode = 'shelf' | 'barcode' | 'manual';
 
@@ -42,7 +43,7 @@ export default function ScanScreen() {
 
   const closeButton = (
     <View style={[styles.close, { top: insets.top + space.sm }]}>
-      <IconButton icon="close" label="Kapat" color="#fff" size={28} onPress={() => router.back()} />
+      <IconButton icon="close" label="Kapat" color="#fff" size={28} onPress={() => goBack()} />
     </View>
   );
 

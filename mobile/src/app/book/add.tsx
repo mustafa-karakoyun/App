@@ -13,6 +13,7 @@ import { locationPaths } from '@/data/locations';
 import { preparePhoto } from '@/data/scans';
 import { api, ApiError, isOffline } from '@/lib/api';
 import { space, useTheme } from '@/theme';
+import { goBack } from '@/lib/nav';
 
 const STATUS_OPTIONS: { value: ReadingStatus; label: string }[] = [
   { value: 'to_read', label: 'Okunacak' },
@@ -128,7 +129,7 @@ export default function AddBookScreen() {
     if (completing) {
       completePendingBook(completing, input, cover);
       toast('Bilgiler kaydedildi');
-      router.back();
+      goBack();
       return;
     }
 

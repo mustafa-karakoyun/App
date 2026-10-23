@@ -15,6 +15,7 @@ import { preparePhoto } from '@/data/scans';
 import { confirm } from '@/lib/confirm';
 import { dueText, formatDate } from '@/lib/format';
 import { space, useTheme } from '@/theme';
+import { goBack } from '@/lib/nav';
 
 const STATUS_OPTIONS: { value: ReadingStatus; label: string }[] = [
   { value: 'to_read', label: 'Okunacak' },
@@ -67,7 +68,7 @@ export default function BookScreen() {
     });
     if (!ok) return;
     await removeFromLibrary(userBook.id);
-    router.back();
+    goBack();
     toast('Kitap kütüphaneden çıkarıldı');
   };
 

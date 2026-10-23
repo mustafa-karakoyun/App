@@ -17,6 +17,7 @@ import { newId, now } from '@/data/util';
 import { ApiError, isOffline } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { radius, space } from '@/theme';
+import { goBack } from '@/lib/nav';
 
 const STAGES = ['Fotoğraf yükleniyor', 'Sırtlar okunuyor', 'Kitaplar eşleştiriliyor', 'Neredeyse bitti'];
 
@@ -96,7 +97,7 @@ export function ShelfMode({ footer }: { footer: ReactNode }) {
           message: 'İnternet yok gibi görünüyor. Fotoğraf kuyruğa alındı, hazır olunca haber vereceğiz.',
           durationMs: 5000,
         });
-        router.back();
+        goBack();
         return;
       }
       if (err instanceof ApiError && err.code === 'quota_exceeded') {
