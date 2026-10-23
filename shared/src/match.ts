@@ -32,7 +32,10 @@ export function tokenSetSimilarity(a: string, b: string): number {
   let shared = 0;
   for (const t of sa) if (sb.has(t)) shared++;
   const smaller = Math.min(sa.size, sb.size);
-  return smaller === 0 ? 0 : shared / smaller;
+  const larger = Math.max(sa.size, sb.size);
+  if (smaller === 0) return 0;
+  // Yalnızca küçük kümeye bakmak tek kelimeyi ("Ceza") her başlığa eşler; büyüğü de hesaba kat.
+  return (shared / smaller + shared / larger) / 2;
 }
 
 function textSimilarity(a: string, b: string): number {
