@@ -22,7 +22,10 @@ export default function LoansScreen() {
   const current = active.filter((l) => !overdue.includes(l));
 
   return (
-    <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={{ paddingTop: insets.top + space.md, paddingBottom: space.xxl }}>
+    <ScrollView
+      style={{ backgroundColor: c.bg }}
+      contentContainerStyle={{ paddingTop: insets.top + space.md, paddingBottom: space.xxl }}
+    >
       <View style={{ paddingHorizontal: space.lg }}>
         <AppText variant="display">Ödünçte</AppText>
         <AppText muted>{active.length ? `${active.length} kitap başkasında` : 'Tüm kitapların evde'}</AppText>
@@ -102,23 +105,25 @@ function LoanRow({ item }: { item: LoanItem }) {
   const due = loan.dueAt ? dueText(loan.dueAt) : null;
   return (
     <View>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push(`/book/${item.userBookId}`)}
-        style={({ pressed }) => [styles.row, { backgroundColor: pressed ? c.bgSunken : 'transparent' }]}
-      >
-        <BookCover uri={book.localCoverUri ?? book.coverUrl} title={book.title} width={44} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <AppText variant="label" style={{ fontSize: 16 }}>
-            {loan.borrowerName}
-          </AppText>
-          <AppText muted numberOfLines={1}>
-            {book.title}
-          </AppText>
-          <AppText variant="small" color={due?.overdue ? c.accent : c.textFaint}>
-            {due ? `${formatDate(loan.dueAt)} · ${due.text}` : `${formatDate(loan.lentAt)} tarihinden beri`}
-          </AppText>
-        </View>
+      <View style={styles.row}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push(`/book/${item.userBookId}`)}
+          style={({ pressed }) => [styles.rowMain, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <BookCover uri={book.localCoverUri ?? book.coverUrl} title={book.title} width={44} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <AppText variant="label" style={{ fontSize: 16 }}>
+              {loan.borrowerName}
+            </AppText>
+            <AppText muted numberOfLines={1}>
+              {book.title}
+            </AppText>
+            <AppText variant="small" color={due?.overdue ? c.accent : c.textFaint}>
+              {due ? `${formatDate(loan.dueAt)} · ${due.text}` : `${formatDate(loan.lentAt)} tarihinden beri`}
+            </AppText>
+          </View>
+        </Pressable>
         <Button
           title="Geri geldi"
           kind="secondary"
@@ -128,13 +133,14 @@ function LoanRow({ item }: { item: LoanItem }) {
             toast(`“${book.title}” geri geldi`);
           }}
         />
-      </Pressable>
+      </View>
       <Divider inset={space.lg + 44 + space.md} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
   historyRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, minHeight: 48 },
 });

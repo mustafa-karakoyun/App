@@ -23,7 +23,10 @@ export function subscribe(listener: Listener): () => void {
  */
 export function useDbQuery<T>(query: () => T, deps: unknown[], tables: TableName[]): T {
   const [version, setVersion] = useState(0);
-  const [result, setResult] = useState<{ value: T; key: string }>(() => ({ value: query(), key: JSON.stringify(deps) + ':0' }));
+  const [result, setResult] = useState<{ value: T; key: string }>(() => ({
+    value: query(),
+    key: JSON.stringify(deps) + ':0',
+  }));
   const key = JSON.stringify(deps) + ':' + version;
 
   useEffect(() => {

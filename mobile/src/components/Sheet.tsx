@@ -23,7 +23,11 @@ export function Sheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: c.overlay }]} onPress={onClose} accessibilityLabel="Kapat" />
+        <Pressable
+          style={[StyleSheet.absoluteFill, { backgroundColor: c.overlay }]}
+          onPress={onClose}
+          accessibilityLabel="Kapat"
+        />
         <View style={styles.spacer} pointerEvents="box-none" />
         <View style={[styles.sheet, { backgroundColor: c.bg, paddingBottom: insets.bottom + space.md }]}>
           <View style={[styles.grabber, { backgroundColor: c.hairline }]} />
@@ -54,5 +58,11 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   grabber: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: space.sm },
-  header: { flexDirection: 'row', alignItems: 'center', paddingLeft: space.lg, paddingRight: space.sm, paddingVertical: space.xs },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: space.lg,
+    paddingRight: space.sm,
+    paddingVertical: space.xs,
+  },
 });

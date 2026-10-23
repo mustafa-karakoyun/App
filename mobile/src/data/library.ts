@@ -166,7 +166,12 @@ export function upsertCatalogBooks(list: Book[]) {
     db
       .select()
       .from(books)
-      .where(inArray(books.id, list.map((b) => b.id)))
+      .where(
+        inArray(
+          books.id,
+          list.map((b) => b.id),
+        ),
+      )
       .all()
       .map((b) => [b.id, b]),
   );
@@ -347,7 +352,11 @@ export function pendingBooks(): BookRow[] {
 }
 
 export function bookIdsWithLocalCover(): BookRow[] {
-  return db.select().from(books).all().filter((b) => b.localCoverUri && b.syncState === 'synced');
+  return db
+    .select()
+    .from(books)
+    .all()
+    .filter((b) => b.localCoverUri && b.syncState === 'synced');
 }
 
 export function clearLocalCover(bookId: string, coverUrl: string | null) {

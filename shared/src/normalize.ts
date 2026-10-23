@@ -78,13 +78,13 @@ const PUBLISHER_ALIASES: Record<string, string> = {
   'is bankasi kultur': 'is bankasi',
   'is kultur': 'is bankasi',
   'tib kultur': 'is bankasi',
-  'iletisim': 'iletisim',
+  iletisim: 'iletisim',
   'can sanat': 'can',
-  'everest': 'everest',
+  everest: 'everest',
   'dogan kitap': 'dogan',
-  'ithaki': 'ithaki',
-  'metis': 'metis',
-  'sel': 'sel',
+  ithaki: 'ithaki',
+  metis: 'metis',
+  sel: 'sel',
 };
 
 /** Yayınevi adını "İletişim Yayınları" → "iletisim" gibi çekirdek ada indirger. */

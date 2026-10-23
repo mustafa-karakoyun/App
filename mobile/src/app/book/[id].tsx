@@ -34,13 +34,17 @@ export default function BookScreen() {
   const [lending, setLending] = useState(false);
 
   if (!item || item.userBook.deletedAt) {
-    return <EmptyState icon="book-outline" title="Kitap bulunamadı" body="Bu kitap kütüphaneden çıkarılmış olabilir." />;
+    return (
+      <EmptyState icon="book-outline" title="Kitap bulunamadı" body="Bu kitap kütüphaneden çıkarılmış olabilir." />
+    );
   }
 
   const { book, userBook, authors, locationPath, activeLoan } = item;
   const pendingIsbn = book.syncState === 'pending_isbn';
   const loan = activeLoan?.dueAt ? dueText(activeLoan.dueAt) : null;
-  const details = [book.publisher, book.year, book.pageCount ? `${book.pageCount} sayfa` : null].filter(Boolean).join(' · ');
+  const details = [book.publisher, book.year, book.pageCount ? `${book.pageCount} sayfa` : null]
+    .filter(Boolean)
+    .join(' · ');
 
   const takeCover = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -104,7 +108,9 @@ export default function BookScreen() {
               kind="secondary"
               compact
               style={{ alignSelf: 'flex-start', marginTop: space.sm }}
-              onPress={() => router.push({ pathname: '/book/add', params: { complete: book.id, isbn: book.isbn13 ?? '' } })}
+              onPress={() =>
+                router.push({ pathname: '/book/add', params: { complete: book.id, isbn: book.isbn13 ?? '' } })
+              }
             />
           </View>
         ) : null}
@@ -119,19 +125,16 @@ export default function BookScreen() {
 
         <SectionLabel>Nerede</SectionLabel>
         <Divider />
-        <Row
-          icon="location-outline"
-          title="Konum"
-          value={locationPath ?? 'Seç'}
-          onPress={() => setPicker(true)}
-        />
+        <Row icon="location-outline" title="Konum" value={locationPath ?? 'Seç'} onPress={() => setPicker(true)} />
         <Divider inset={space.lg + 28 + space.md} />
         {activeLoan ? (
           <Row
             icon="swap-horizontal"
             title={`${activeLoan.borrowerName}’de`}
             subtitle={
-              loan ? `${formatDate(activeLoan.dueAt)} · ${loan.text}` : `${formatDate(activeLoan.lentAt)} tarihinde verildi`
+              loan
+                ? `${formatDate(activeLoan.dueAt)} · ${loan.text}`
+                : `${formatDate(activeLoan.lentAt)} tarihinde verildi`
             }
             right={
               <Button
@@ -169,7 +172,12 @@ export default function BookScreen() {
             <Divider inset={space.lg + 28 + space.md} />
           </>
         ) : null}
-        <Row icon="calendar-outline" title="Eklendi" value={`${formatDate(userBook.createdAt, true)} · ${ADDED_VIA_LABELS[userBook.addedVia]}`} />
+        <Row
+          icon="calendar-outline"
+          title="Eklendi"
+          subtitle={ADDED_VIA_LABELS[userBook.addedVia]}
+          value={formatDate(userBook.createdAt, true)}
+        />
         <Divider />
 
         <View style={{ paddingHorizontal: space.lg, paddingTop: space.xl }}>
@@ -202,6 +210,12 @@ export default function BookScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { flexDirection: 'row', gap: space.lg, paddingHorizontal: space.lg, paddingTop: space.sm, alignItems: 'flex-end' },
+  hero: {
+    flexDirection: 'row',
+    gap: space.lg,
+    paddingHorizontal: space.lg,
+    paddingTop: space.sm,
+    alignItems: 'flex-end',
+  },
   notice: { marginHorizontal: space.lg, marginTop: space.lg, padding: space.lg, borderRadius: 10, gap: space.xs },
 });

@@ -10,7 +10,12 @@ afterAll(() => ctx.close());
 
 async function scan(headers: Record<string, string>) {
   const body = multipart('photo', await jpeg());
-  return ctx.app.inject({ method: 'POST', url: '/scans', headers: { ...headers, ...body.headers }, payload: body.payload });
+  return ctx.app.inject({
+    method: 'POST',
+    url: '/scans',
+    headers: { ...headers, ...body.headers },
+    payload: body.payload,
+  });
 }
 
 describe('raf tarama', () => {
@@ -42,13 +47,20 @@ describe('raf tarama', () => {
     const { headers } = await registerUser(ctx.app, 'ogreten@example.com');
     const first = (await scan(headers)).json();
     const masumiyet = first.items.find((i: { position: number }) => i.position === 4);
-    const pamuk = masumiyet.candidates.find((c: { book: { authors: string[] } }) => c.book.authors.includes('Orhan Pamuk'));
+    const pamuk = masumiyet.candidates.find((c: { book: { authors: string[] } }) =>
+      c.book.authors.includes('Orhan Pamuk'),
+    );
 
     const confirm = await ctx.app.inject({
       method: 'POST',
       url: `/scans/${first.scan_id}/confirm`,
       headers,
-      payload: { items: [{ position: 4, book_id: pamuk.book.id }, { position: 5, book_id: null }] },
+      payload: {
+        items: [
+          { position: 4, book_id: pamuk.book.id },
+          { position: 5, book_id: null },
+        ],
+      },
     });
     expect(confirm.json().accepted).toBe(1);
 
@@ -72,7 +84,12 @@ describe('raf tarama', () => {
   it('bozuk görselde 400 döner ve kotadan düşmez', async () => {
     const { headers } = await registerUser(ctx.app, 'bozuk@example.com');
     const body = multipart('photo', Buffer.from('jpeg değil'));
-    const res = await ctx.app.inject({ method: 'POST', url: '/scans', headers: { ...headers, ...body.headers }, payload: body.payload });
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/scans',
+      headers: { ...headers, ...body.headers },
+      payload: body.payload,
+    });
     expect(res.statusCode).toBe(400);
     const quota = await ctx.app.inject({ method: 'GET', url: '/scans/quota', headers });
     expect(quota.json().used).toBe(0);
@@ -80,11 +97,20 @@ describe('raf tarama', () => {
 });
 
 describe('parçalı okuma', () => {
-  const book = (position: number, title: string) => ({ position, raw_text: title, title, author: null, publisher: null, confidence: 0.8 });
+  const book = (position: number, title: string) => ({
+    position,
+    raw_text: title,
+    title,
+    author: null,
+    publisher: null,
+    confidence: 0.8,
+  });
 
   it('okunamayan sırt çoksa parçalamaya karar verir', () => {
     expect(shouldSplit({ books: [book(1, 'A')], unreadable_count: 3 })).toBe(true);
-    expect(shouldSplit({ books: Array.from({ length: 20 }, (_, i) => book(i + 1, `K${i}`)), unreadable_count: 3 })).toBe(false);
+    expect(
+      shouldSplit({ books: Array.from({ length: 20 }, (_, i) => book(i + 1, `K${i}`)), unreadable_count: 3 }),
+    ).toBe(false);
   });
 
   it('parçaları birleştirir ve örtüşen kitabı tekrar saymaz', () => {

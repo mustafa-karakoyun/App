@@ -22,7 +22,7 @@ const MODES: { value: Mode; label: string }[] = [
 export default function ScanScreen() {
   const params = useLocalSearchParams<{ mode?: Mode }>();
   const insets = useSafeAreaInsets();
-  const [mode, setMode] = useState<Mode>(() => params.mode ?? ((getKv('scan.mode') as Mode | null) ?? 'shelf'));
+  const [mode, setMode] = useState<Mode>(() => params.mode ?? (getKv('scan.mode') as Mode | null) ?? 'shelf');
   const [permission, requestPermission] = useCameraPermissions();
 
   const changeMode = (m: Mode) => {

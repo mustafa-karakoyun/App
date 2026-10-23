@@ -40,7 +40,13 @@ export default function ReviewScreen() {
   const [saving, setSaving] = useState(false);
 
   if (!row || !result) {
-    return <EmptyState icon="images-outline" title="Tarama bulunamadı" body="Bu tarama zaten eklenmiş ya da silinmiş olabilir." />;
+    return (
+      <EmptyState
+        icon="images-outline"
+        title="Tarama bulunamadı"
+        body="Bu tarama zaten eklenmiş ya da silinmiş olabilir."
+      />
+    );
   }
 
   const groups = {
@@ -51,7 +57,10 @@ export default function ReviewScreen() {
   const selectedCount = Object.values(selection).filter((v) => v !== null).length;
 
   const toggle = (item: ScanItem) => {
-    setSelection((s) => ({ ...s, [item.position]: s[item.position] === null || s[item.position] === undefined ? 0 : null }));
+    setSelection((s) => ({
+      ...s,
+      [item.position]: s[item.position] === null || s[item.position] === undefined ? 0 : null,
+    }));
   };
 
   const choose = (item: ScanItem, index: number | null) => {
@@ -95,51 +104,53 @@ export default function ReviewScreen() {
 
     return (
       <View key={item.position}>
-        <Pressable
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: isSelected }}
-          onPress={() => (needsChoice || !shown ? setChoosing(item) : toggle(item))}
-          style={({ pressed }) => [styles.item, { backgroundColor: pressed ? c.bgSunken : 'transparent' }]}
-        >
-          <Ionicons
-            name={isSelected ? 'checkmark-circle' : needsChoice ? 'help-circle-outline' : 'ellipse-outline'}
-            size={26}
-            color={isSelected ? c.primary : needsChoice ? c.warning : c.textFaint}
-          />
-          {shown && (isSelected || item.group === 'matched') ? (
-            <BookCover uri={shown.book.cover_url} title={shown.book.title} width={40} />
-          ) : null}
-          <View style={{ flex: 1, gap: 2 }}>
+        <View style={[styles.item, { paddingVertical: 0 }]}>
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: isSelected }}
+            onPress={() => (needsChoice || !shown ? setChoosing(item) : toggle(item))}
+            style={({ pressed }) => [styles.itemMain, { opacity: pressed ? 0.6 : 1 }]}
+          >
+            <Ionicons
+              name={isSelected ? 'checkmark-circle' : needsChoice ? 'help-circle-outline' : 'ellipse-outline'}
+              size={26}
+              color={isSelected ? c.primary : needsChoice ? c.warning : c.textFaint}
+            />
             {shown && (isSelected || item.group === 'matched') ? (
-              <>
-                <AppText variant="bookTitle" numberOfLines={2}>
-                  {shown.book.title}
-                </AppText>
-                <AppText variant="small" muted numberOfLines={1}>
-                  {[shown.book.authors.join(', '), shown.book.publisher].filter(Boolean).join(' · ')}
-                </AppText>
-              </>
-            ) : (
-              <AppText variant="label" numberOfLines={2}>
-                {item.title ?? 'Okunamadı'}
-                {item.author ? <AppText muted>{` · ${item.author}`}</AppText> : null}
-              </AppText>
-            )}
-            <AppText variant="small" faint numberOfLines={1}>
-              Sırtta: {item.raw_text}
-            </AppText>
-            {owned ? (
-              <AppText variant="small" color={c.accent}>
-                Zaten kütüphanende
-              </AppText>
+              <BookCover uri={shown.book.cover_url} title={shown.book.title} width={40} />
             ) : null}
-          </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              {shown && (isSelected || item.group === 'matched') ? (
+                <>
+                  <AppText variant="bookTitle" numberOfLines={2}>
+                    {shown.book.title}
+                  </AppText>
+                  <AppText variant="small" muted numberOfLines={1}>
+                    {[shown.book.authors.join(', '), shown.book.publisher].filter(Boolean).join(' · ')}
+                  </AppText>
+                </>
+              ) : (
+                <AppText variant="label" numberOfLines={2}>
+                  {item.title ?? 'Okunamadı'}
+                  {item.author ? <AppText muted>{` · ${item.author}`}</AppText> : null}
+                </AppText>
+              )}
+              <AppText variant="small" faint numberOfLines={1}>
+                Sırtta: {item.raw_text}
+              </AppText>
+              {owned ? (
+                <AppText variant="small" color={c.accent}>
+                  Zaten kütüphanende
+                </AppText>
+              ) : null}
+            </View>
+          </Pressable>
           <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setChoosing(item)} style={styles.change}>
             <AppText variant="small" color={c.primary}>
               {needsChoice ? 'Seç' : 'Değiştir'}
             </AppText>
           </Pressable>
-        </Pressable>
+        </View>
         <Divider inset={space.lg + 26 + space.md} />
       </View>
     );
@@ -151,7 +162,8 @@ export default function ReviewScreen() {
         <View style={{ paddingHorizontal: space.lg, paddingTop: space.md, gap: space.xs }}>
           <AppText variant="title">{items.length} kitap bulundu</AppText>
           <AppText muted>
-            {groups.matched.length} eşleşti · {groups.verify.length} kontrol bekliyor · {groups.not_found.length} bulunamadı
+            {groups.matched.length} eşleşti · {groups.verify.length} kontrol bekliyor · {groups.not_found.length}{' '}
+            bulunamadı
           </AppText>
           {result.unreadable_count > 0 ? (
             <AppText variant="small" faint>
@@ -167,21 +179,21 @@ export default function ReviewScreen() {
 
         {groups.verify.length ? (
           <>
-            <SectionLabel>Kontrol et ({groups.verify.length})</SectionLabel>
+            <SectionLabel>{`Kontrol et (${groups.verify.length})`}</SectionLabel>
             <Divider />
             {groups.verify.map(renderItem)}
           </>
         ) : null}
         {groups.matched.length ? (
           <>
-            <SectionLabel>Eşleşti ({groups.matched.length})</SectionLabel>
+            <SectionLabel>{`Eşleşti (${groups.matched.length})`}</SectionLabel>
             <Divider />
             {groups.matched.map(renderItem)}
           </>
         ) : null}
         {groups.not_found.length ? (
           <>
-            <SectionLabel>Bulunamadı ({groups.not_found.length})</SectionLabel>
+            <SectionLabel>{`Bulunamadı (${groups.not_found.length})`}</SectionLabel>
             <Divider />
             {groups.not_found.map(renderItem)}
           </>
@@ -192,7 +204,12 @@ export default function ReviewScreen() {
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { backgroundColor: c.bg, borderTopColor: c.hairline, paddingBottom: insets.bottom + space.md }]}>
+      <View
+        style={[
+          styles.footer,
+          { backgroundColor: c.bg, borderTopColor: c.hairline, paddingBottom: insets.bottom + space.md },
+        ]}
+      >
         <Button
           title={selectedCount ? `${selectedCount} kitabı kütüphaneye ekle` : 'Eklenecek kitap seç'}
           onPress={save}
@@ -310,7 +327,10 @@ function CandidateSheet({
             keyExtractor={(b) => b.id}
             ItemSeparatorComponent={() => <Divider inset={space.lg} />}
             renderItem={({ item: book }) => (
-              <Pressable onPress={() => onChooseBook(book)} style={({ pressed }) => [styles.item, { backgroundColor: pressed ? c.bgSunken : 'transparent' }]}>
+              <Pressable
+                onPress={() => onChooseBook(book)}
+                style={({ pressed }) => [styles.item, { backgroundColor: pressed ? c.bgSunken : 'transparent' }]}
+              >
                 <BookCover uri={book.cover_url} title={book.title} width={40} />
                 <View style={{ flex: 1 }}>
                   <AppText variant="bookTitle" numberOfLines={2}>
@@ -335,7 +355,14 @@ function CandidateSheet({
 }
 
 const styles = StyleSheet.create({
-  item: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+  },
+  itemMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
   change: { minHeight: 44, justifyContent: 'center', paddingLeft: space.sm },
   footer: {
     position: 'absolute',

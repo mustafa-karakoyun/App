@@ -45,7 +45,10 @@ export function recentBorrowers(limit = 6): string[] {
   const rows = db.select({ name: loans.borrowerName }).from(loans).where(isNull(loans.deletedAt)).all();
   const counts = new Map<string, number>();
   for (const r of rows) counts.set(r.name, (counts.get(r.name) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([n]) => n);
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([n]) => n);
 }
 
 export async function lendBook(userBookId: string, borrowerName: string, dueAt: string | null): Promise<LoanRow> {

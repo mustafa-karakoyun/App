@@ -26,7 +26,9 @@ const app = await buildApp(
 
 await app.listen({ port: config.PORT, host: config.HOST });
 if (vision.name === 'mock') {
-  app.log.warn('Raf tarama sahte (mock) yanıtla çalışıyor. Gerçek tarama için VISION_PROVIDER=openai ve OPENAI_API_KEY girin.');
+  app.log.warn(
+    'Raf tarama sahte (mock) yanıtla çalışıyor. Gerçek tarama için VISION_PROVIDER=openai ve OPENAI_API_KEY girin.',
+  );
 }
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

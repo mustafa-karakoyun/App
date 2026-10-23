@@ -7,10 +7,12 @@
   ],
   "scripts": {
     "test": "npm run test --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present && npm --prefix mobile run typecheck"
+    "typecheck": "npm run typecheck --workspaces --if-present && npm --prefix mobile run typecheck",
+    "format": "prettier --write \"shared/**/*.ts\" \"server/{src,test}/**/*.ts\" \"mobile/src/**/*.{ts,tsx}\""
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "prettier": "^3.9.10",
     "typescript": "~5.9",
     "vitest": "^5.0.5"
   }

@@ -7,11 +7,56 @@ import { migrate } from '../src/migrate';
 import { MockVisionProvider, type VisionProvider } from '../src/scan/vision';
 
 export const SAMPLE_BOOKS: ExternalBook[] = [
-  { isbn13: '9789750719387', title: 'Suç ve Ceza', authors: ['Fyodor Mihayloviç Dostoyevski'], publisher: 'İletişim Yayınları', year: 2015, page_count: 687, cover_url: 'https://example.com/suc.jpg', source: 'google_books' },
-  { isbn13: '9789753638029', title: 'Kürk Mantolu Madonna', authors: ['Sabahattin Ali'], publisher: 'Yapı Kredi Yayınları', year: 2019, page_count: 160, cover_url: null, source: 'google_books' },
-  { isbn13: '9789754700114', title: 'Tutunamayanlar', authors: ['Oğuz Atay'], publisher: 'İletişim Yayınları', year: 2000, page_count: 724, cover_url: null, source: 'google_books' },
-  { isbn13: '9789750507038', title: 'Masumiyet Müzesi', authors: ['Orhan Pamuk'], publisher: 'İletişim Yayınları', year: 2008, page_count: 592, cover_url: null, source: 'google_books' },
-  { isbn13: '9789750508257', title: 'Masumiyet', authors: ['Ayşe Kulin'], publisher: 'Everest', year: 2010, page_count: 300, cover_url: null, source: 'google_books' },
+  {
+    isbn13: '9789750719387',
+    title: 'Suç ve Ceza',
+    authors: ['Fyodor Mihayloviç Dostoyevski'],
+    publisher: 'İletişim Yayınları',
+    year: 2015,
+    page_count: 687,
+    cover_url: 'https://example.com/suc.jpg',
+    source: 'google_books',
+  },
+  {
+    isbn13: '9789753638029',
+    title: 'Kürk Mantolu Madonna',
+    authors: ['Sabahattin Ali'],
+    publisher: 'Yapı Kredi Yayınları',
+    year: 2019,
+    page_count: 160,
+    cover_url: null,
+    source: 'google_books',
+  },
+  {
+    isbn13: '9789754700114',
+    title: 'Tutunamayanlar',
+    authors: ['Oğuz Atay'],
+    publisher: 'İletişim Yayınları',
+    year: 2000,
+    page_count: 724,
+    cover_url: null,
+    source: 'google_books',
+  },
+  {
+    isbn13: '9789750507038',
+    title: 'Masumiyet Müzesi',
+    authors: ['Orhan Pamuk'],
+    publisher: 'İletişim Yayınları',
+    year: 2008,
+    page_count: 592,
+    cover_url: null,
+    source: 'google_books',
+  },
+  {
+    isbn13: '9789750508257',
+    title: 'Masumiyet',
+    authors: ['Ayşe Kulin'],
+    publisher: 'Everest',
+    year: 2010,
+    page_count: 300,
+    cover_url: null,
+    source: 'google_books',
+  },
 ];
 
 /** Dış API yerine geçen sahte sağlayıcı; kaç kez çağrıldığını sayar. */
@@ -55,13 +100,19 @@ export async function createTestApp(opts: { vision?: VisionProvider; providers?:
 }
 
 export async function registerUser(app: Awaited<ReturnType<typeof createTestApp>>['app'], email = 'okur@example.com') {
-  const res = await app.inject({ method: 'POST', url: '/auth/register', payload: { email, password: 'gizli-sifre', name: 'Okur' } });
+  const res = await app.inject({
+    method: 'POST',
+    url: '/auth/register',
+    payload: { email, password: 'gizli-sifre', name: 'Okur' },
+  });
   const body = res.json() as { token: string; user: { id: string } };
   return { token: body.token, userId: body.user.id, headers: { authorization: `Bearer ${body.token}` } };
 }
 
 export async function jpeg(width = 1200, height = 800): Promise<Buffer> {
-  return sharp({ create: { width, height, channels: 3, background: '#c8b89a' } }).jpeg().toBuffer();
+  return sharp({ create: { width, height, channels: 3, background: '#c8b89a' } })
+    .jpeg()
+    .toBuffer();
 }
 
 /** Tek dosyalı multipart gövdesi üretir. */
@@ -71,5 +122,8 @@ export function multipart(field: string, file: Buffer, filename = 'raf.jpg') {
     `--${boundary}\r\nContent-Disposition: form-data; name="${field}"; filename="${filename}"\r\nContent-Type: image/jpeg\r\n\r\n`,
   );
   const tail = Buffer.from(`\r\n--${boundary}--\r\n`);
-  return { payload: Buffer.concat([head, file, tail]), headers: { 'content-type': `multipart/form-data; boundary=${boundary}` } };
+  return {
+    payload: Buffer.concat([head, file, tail]),
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}` },
+  };
 }

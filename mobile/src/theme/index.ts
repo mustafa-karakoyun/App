@@ -47,7 +47,7 @@ export const type = {
   body: { fontSize: 16, lineHeight: 22 },
   label: { fontSize: 14, lineHeight: 19, fontWeight: '500' as const },
   small: { fontSize: 13, lineHeight: 18 },
-  overline: { fontSize: 12, lineHeight: 16, fontWeight: '600' as const, letterSpacing: 0.8, textTransform: 'uppercase' as const },
+  overline: { fontSize: 12, lineHeight: 16, fontWeight: '600' as const, letterSpacing: 0.8 },
 };
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };

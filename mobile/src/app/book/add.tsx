@@ -54,7 +54,12 @@ export default function AddBookScreen() {
     }
     const res = camera
       ? await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [2, 3], quality: 0.8 })
-      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [2, 3], quality: 0.8 });
+      : await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [2, 3],
+          quality: 0.8,
+        });
     const asset = res.canceled ? null : res.assets[0];
     if (asset) setCover(await preparePhoto(asset.uri, asset.width, asset.height));
   };
@@ -111,7 +116,10 @@ export default function AddBookScreen() {
     const input = {
       isbn13: normalizedIsbn,
       title: title.trim(),
-      authors: authors.split(',').map((a) => a.trim()).filter(Boolean),
+      authors: authors
+        .split(',')
+        .map((a) => a.trim())
+        .filter(Boolean),
       publisher: publisher.trim() || null,
       year: yearNum,
       page_count: pages.trim() ? Number(pages) || null : null,
@@ -143,10 +151,17 @@ export default function AddBookScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: c.bg }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <ScrollView contentContainerStyle={{ paddingBottom: space.xxl * 2 }} keyboardShouldPersistTaps="handled">
         <View style={styles.coverRow}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Kapak fotoğrafı çek" onPress={() => pickCover(true)}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Kapak fotoğrafı çek"
+            onPress={() => pickCover(true)}
+          >
             <BookCover uri={cover} title={title || 'Kapak'} width={84} />
           </Pressable>
           <View style={{ flex: 1, gap: space.sm }}>
@@ -178,7 +193,14 @@ export default function AddBookScreen() {
           <TextField label="Yayınevi" value={publisher} onChangeText={setPublisher} placeholder="İsteğe bağlı" />
           <View style={{ flexDirection: 'row', gap: space.md }}>
             <View style={{ flex: 1 }}>
-              <TextField label="Yıl" value={year} onChangeText={setYear} keyboardType="number-pad" maxLength={4} error={errors.year} />
+              <TextField
+                label="Yıl"
+                value={year}
+                onChangeText={setYear}
+                keyboardType="number-pad"
+                maxLength={4}
+                error={errors.year}
+              />
             </View>
             <View style={{ flex: 1 }}>
               <TextField label="Sayfa" value={pages} onChangeText={setPages} keyboardType="number-pad" maxLength={5} />
@@ -198,7 +220,14 @@ export default function AddBookScreen() {
             editable={!completing}
           />
           {isbn.replace(/\D/g, '').length >= 10 && !completing ? (
-            <Button title="ISBN'den bilgileri getir" kind="ghost" compact onPress={fetchByIsbn} loading={lookup.loading} style={{ alignSelf: 'flex-start' }} />
+            <Button
+              title="ISBN'den bilgileri getir"
+              kind="ghost"
+              compact
+              onPress={fetchByIsbn}
+              loading={lookup.loading}
+              style={{ alignSelf: 'flex-start' }}
+            />
           ) : null}
         </View>
 

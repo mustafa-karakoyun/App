@@ -25,11 +25,17 @@ export function AppText({
   faint,
   color,
   style,
+  children,
   ...rest
 }: TextProps & { variant?: Variant; muted?: boolean; faint?: boolean; color?: string }) {
   const { c } = useTheme();
   const tone = color ?? (faint ? c.textFaint : muted ? c.textMuted : c.text);
-  return <Text {...rest} style={[type[variant] as TextStyle, { color: tone }, style]} />;
+  const content = variant === 'overline' && typeof children === 'string' ? turkishUpper(children) : children;
+  return (
+    <Text {...rest} style={[type[variant] as TextStyle, { color: tone }, style]}>
+      {content}
+    </Text>
+  );
 }
 
 export function Divider({ inset = 0, style }: { inset?: number; style?: StyleProp<ViewStyle> }) {
@@ -37,7 +43,7 @@ export function Divider({ inset = 0, style }: { inset?: number; style?: StylePro
   return <View style={[{ height: StyleSheet.hairlineWidth, backgroundColor: c.hairline, marginLeft: inset }, style]} />;
 }
 
-type ButtonKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'onDark';
+type ButtonKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'onDark' | 'onDarkPrimary';
 
 export function Button({
   title,
@@ -66,6 +72,7 @@ export function Button({
     danger: { bg: 'transparent', fg: c.accent, border: 'transparent' },
     // Kamera gibi koyu zeminlerde ikincil eylem.
     onDark: { bg: 'transparent', fg: '#F5F0E6', border: 'rgba(245,240,230,0.8)' },
+    onDarkPrimary: { bg: '#F5F0E6', fg: '#1A1815', border: '#F5F0E6' },
   };
   const p = palette[kind];
   const inactive = disabled || loading;
@@ -130,9 +137,11 @@ export function Row({
   danger,
   right,
   chevron = !!onPress,
+  subtitleLines = 2,
 }: {
   title: string;
   subtitle?: string | null;
+  subtitleLines?: number;
   value?: string | null;
   icon?: IconName;
   onPress?: () => void;
@@ -142,18 +151,13 @@ export function Row({
 }) {
   const { c } = useTheme();
   const tone = danger ? c.accent : c.text;
-  return (
-    <Pressable
-      accessibilityRole={onPress ? 'button' : undefined}
-      onPress={onPress}
-      disabled={!onPress}
-      style={({ pressed }) => [styles.row, { backgroundColor: pressed ? c.bgSunken : 'transparent' }]}
-    >
+  const main = (
+    <>
       {icon ? <Ionicons name={icon} size={20} color={danger ? c.accent : c.textMuted} style={{ width: 28 }} /> : null}
       <View style={{ flex: 1 }}>
         <AppText color={tone}>{title}</AppText>
         {subtitle ? (
-          <AppText variant="small" muted numberOfLines={2}>
+          <AppText variant="small" muted numberOfLines={subtitleLines}>
             {subtitle}
           </AppText>
         ) : null}
@@ -163,10 +167,41 @@ export function Row({
           {value}
         </AppText>
       ) : null}
-      {right}
+    </>
+  );
+  // Sağdaki eylem (ör. "Geri geldi") satırın dokunma alanının içinde olmasın: ayrı odaklanabilsin.
+  if (right) {
+    return (
+      <View style={[styles.row, { paddingVertical: 0 }]}>
+        <Pressable
+          accessibilityRole={onPress ? 'button' : undefined}
+          onPress={onPress}
+          disabled={!onPress}
+          style={({ pressed }) => [styles.rowMain, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          {main}
+        </Pressable>
+        {right}
+        {chevron ? <Ionicons name="chevron-forward" size={18} color={c.textFaint} /> : null}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      accessibilityRole={onPress ? 'button' : undefined}
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [styles.row, { backgroundColor: pressed ? c.bgSunken : 'transparent' }]}
+    >
+      {main}
       {chevron ? <Ionicons name="chevron-forward" size={18} color={c.textFaint} /> : null}
     </Pressable>
   );
+}
+
+/** CSS/RN textTransform Türkçe i/ı ayrımını bilmez ("Gizlilik" → "GIZLILIK"); elle çevir. */
+export function turkishUpper(text: string): string {
+  return text.replace(/i/g, 'İ').replace(/ı/g, 'I').toUpperCase();
 }
 
 export function SectionLabel({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -314,7 +349,9 @@ export function EmptyState({
           {body}
         </AppText>
       ) : null}
-      {action ? <View style={{ marginTop: space.md, alignSelf: 'stretch', alignItems: 'center' }}>{action}</View> : null}
+      {action ? (
+        <View style={{ marginTop: space.md, alignSelf: 'stretch', alignItems: 'center' }}>{action}</View>
+      ) : null}
     </View>
   );
 }
@@ -339,6 +376,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.md,
+  },
+  rowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    paddingVertical: space.md,
+    minHeight: 52,
   },
   chip: {
     minHeight: 36,

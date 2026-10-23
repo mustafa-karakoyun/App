@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme';
 
@@ -23,9 +24,11 @@ export function BookCover({
   pending?: boolean;
 }) {
   const { c } = useTheme();
+  // Kapak adresi yüklenemezse (çevrimdışı ilk açılış, kırık bağlantı) yer tutucuya düş.
+  const [failedUri, setFailedUri] = useState<string | null>(null);
   const height = Math.round(width * 1.5);
   const box = { width, height, borderRadius: Math.max(3, width / 16) };
-  if (uri) {
+  if (uri && failedUri !== uri) {
     return (
       <Image
         source={{ uri }}
@@ -33,6 +36,7 @@ export function BookCover({
         contentFit="cover"
         transition={150}
         cachePolicy="disk"
+        onError={() => setFailedUri(uri)}
         accessibilityIgnoresInvertColors
       />
     );

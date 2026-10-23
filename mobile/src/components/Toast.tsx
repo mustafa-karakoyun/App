@@ -40,9 +40,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [hide, opacity],
   );
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
 
   return (
     <ToastContext.Provider value={show}>

@@ -67,7 +67,11 @@ describe('ISBN', () => {
 });
 
 describe('eşleştirme', () => {
-  const sucVeCeza = { title: 'Suç ve Ceza', authors: ['Fyodor Mihayloviç Dostoyevski'], publisher: 'İletişim Yayınları' };
+  const sucVeCeza = {
+    title: 'Suç ve Ceza',
+    authors: ['Fyodor Mihayloviç Dostoyevski'],
+    publisher: 'İletişim Yayınları',
+  };
   const budala = { title: 'Budala', authors: ['Fyodor Dostoyevski'], publisher: 'İletişim Yayınları' };
 
   it('model çıktısı doğru kitapla yüksek puan alır', () => {

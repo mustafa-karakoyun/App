@@ -14,22 +14,38 @@ describe('kimlik doğrulama', () => {
     expect(me.statusCode).toBe(200);
     expect(me.json().email).toBe('ali@example.com');
 
-    const login = await ctx.app.inject({ method: 'POST', url: '/auth/login', payload: { email: 'ali@example.com', password: 'gizli-sifre' } });
+    const login = await ctx.app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: { email: 'ali@example.com', password: 'gizli-sifre' },
+    });
     expect(login.statusCode).toBe(200);
     expect(login.json().token).toBeTruthy();
   });
 
   it('aynı e-postayla ikinci kaydı reddeder', async () => {
     await registerUser(ctx.app, 'iki@example.com');
-    const res = await ctx.app.inject({ method: 'POST', url: '/auth/register', payload: { email: 'iki@example.com', password: 'baska-sifre' } });
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: { email: 'iki@example.com', password: 'baska-sifre' },
+    });
     expect(res.statusCode).toBe(409);
     expect(res.json().error).toBe('email_taken');
   });
 
   it('hatalı şifre ve kısa şifreyi reddeder', async () => {
-    const wrong = await ctx.app.inject({ method: 'POST', url: '/auth/login', payload: { email: 'iki@example.com', password: 'yanlis-sifre' } });
+    const wrong = await ctx.app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: { email: 'iki@example.com', password: 'yanlis-sifre' },
+    });
     expect(wrong.statusCode).toBe(401);
-    const short = await ctx.app.inject({ method: 'POST', url: '/auth/register', payload: { email: 'k@example.com', password: '123' } });
+    const short = await ctx.app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: { email: 'k@example.com', password: '123' },
+    });
     expect(short.statusCode).toBe(400);
   });
 

@@ -30,7 +30,12 @@ async function splitIntoThree(image: Buffer, width: number, height: number): Pro
   for (let i = 0; i < 3; i++) {
     const left = Math.max(0, i * third - overlap);
     const right = i === 2 ? width : Math.min(width, (i + 1) * third + overlap);
-    parts.push(await sharp(image).extract({ left, top: 0, width: right - left, height }).jpeg({ quality: 85 }).toBuffer());
+    parts.push(
+      await sharp(image)
+        .extract({ left, top: 0, width: right - left, height })
+        .jpeg({ quality: 85 })
+        .toBuffer(),
+    );
   }
   return parts;
 }
@@ -82,7 +87,11 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 }
 
 /** Model çıktısındaki her kitap için aday bulur ve eşleşti/doğrula/bulunamadı diye gruplar. */
-export async function matchShelf(db: Pick<pg.Pool, 'query'>, providers: BookProviders, output: ShelfOutput): Promise<ScanItem[]> {
+export async function matchShelf(
+  db: Pick<pg.Pool, 'query'>,
+  providers: BookProviders,
+  output: ShelfOutput,
+): Promise<ScanItem[]> {
   const sorted = [...output.books].sort((a, b) => a.position - b.position);
   return mapLimit(sorted, 4, async (book): Promise<ScanItem> => {
     const base = {

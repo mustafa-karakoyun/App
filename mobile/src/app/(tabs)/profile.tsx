@@ -26,7 +26,11 @@ export default function ProfileScreen() {
   const sync = useSyncStatus();
   const counts = useDbQuery(() => statusCounts(), [], ['user_books']);
   const locationCount = useDbQuery(() => listLocations().length, [], ['locations']);
-  const syncInfo = useDbQuery(() => ({ last: lastSyncAt(), pending: pendingChangeCount() }), [sync.running], ['kv', 'user_books', 'loans', 'locations']);
+  const syncInfo = useDbQuery(
+    () => ({ last: lastSyncAt(), pending: pendingChangeCount() }),
+    [sync.running],
+    ['kv', 'user_books', 'loans', 'locations'],
+  );
   const quota = useQuery({ queryKey: ['quota', user?.id], queryFn: fetchQuota, enabled: !!user });
 
   const syncSubtitle = sync.running
@@ -67,7 +71,10 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={{ paddingTop: insets.top + space.md, paddingBottom: space.xxl * 2 }}>
+    <ScrollView
+      style={{ backgroundColor: c.bg }}
+      contentContainerStyle={{ paddingTop: insets.top + space.md, paddingBottom: space.xxl * 2 }}
+    >
       <View style={{ paddingHorizontal: space.lg, gap: 2 }}>
         <AppText variant="display">Profil</AppText>
         <AppText muted>
@@ -137,6 +144,7 @@ export default function ProfileScreen() {
         icon="shield-checkmark-outline"
         title="Raf fotoğrafların saklanmaz"
         subtitle="Fotoğraf yalnızca kitapları tanımak için işlenir ve hemen silinir. Ödünç verdiğin kişilerin yalnızca adı tutulur."
+        subtitleLines={4}
       />
       <Divider />
 

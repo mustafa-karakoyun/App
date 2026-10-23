@@ -54,7 +54,9 @@ export function useAppLifecycle() {
       const url = response?.notification.request.content.data?.url;
       if (typeof url === 'string') router.push(url as never);
     };
-    Notifications.getLastNotificationResponseAsync().then(open).catch(() => {});
+    Notifications.getLastNotificationResponseAsync()
+      .then(open)
+      .catch(() => {});
     const sub = Notifications.addNotificationResponseReceivedListener(open);
     return () => sub.remove();
   }, []);

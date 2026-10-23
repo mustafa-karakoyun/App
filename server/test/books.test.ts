@@ -46,18 +46,38 @@ describe('kitap kataloğu', () => {
   it('istemcinin verdiği id ile elle kitap oluşturur', async () => {
     const { headers } = await registerUser(ctx.app, 'idli@example.com');
     const id = '6f1c2b8e-1d2a-4c3b-9a8e-123456789abc';
-    const res = await ctx.app.inject({ method: 'POST', url: '/books', headers, payload: { id, title: 'Çevrimdışı Kitap', authors: [] } });
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: '/books',
+      headers,
+      payload: { id, title: 'Çevrimdışı Kitap', authors: [] },
+    });
     expect(res.json().id).toBe(id);
     // Aynı istek tekrar gelirse (yeniden deneme) aynı kitap döner.
-    const again = await ctx.app.inject({ method: 'POST', url: '/books', headers, payload: { id, title: 'Çevrimdışı Kitap', authors: [] } });
+    const again = await ctx.app.inject({
+      method: 'POST',
+      url: '/books',
+      headers,
+      payload: { id, title: 'Çevrimdışı Kitap', authors: [] },
+    });
     expect(again.json().id).toBe(id);
   });
 
   it('kapağı olmayan kitaba kapak yükler', async () => {
     const { headers } = await registerUser(ctx.app, 'kapak@example.com');
-    const created = await ctx.app.inject({ method: 'POST', url: '/books', headers, payload: { title: 'Kapaksız', authors: ['Biri'] } });
+    const created = await ctx.app.inject({
+      method: 'POST',
+      url: '/books',
+      headers,
+      payload: { title: 'Kapaksız', authors: ['Biri'] },
+    });
     const body = multipart('photo', await jpeg(600, 900), 'kapak.jpg');
-    const res = await ctx.app.inject({ method: 'POST', url: `/books/${created.json().id}/cover`, headers: { ...headers, ...body.headers }, payload: body.payload });
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: `/books/${created.json().id}/cover`,
+      headers: { ...headers, ...body.headers },
+      payload: body.payload,
+    });
     expect(res.statusCode).toBe(200);
     expect(res.json().cover_url).toMatch(/\/uploads\/covers\/.+\.jpg$/);
 
@@ -69,7 +89,12 @@ describe('kitap kataloğu', () => {
     const { headers } = await registerUser(ctx.app, 'kapak2@example.com');
     const book = (await ctx.app.inject({ method: 'GET', url: '/books/isbn/9789750719387' })).json();
     const body = multipart('photo', await jpeg(), 'kapak.jpg');
-    const res = await ctx.app.inject({ method: 'POST', url: `/books/${book.id}/cover`, headers: { ...headers, ...body.headers }, payload: body.payload });
+    const res = await ctx.app.inject({
+      method: 'POST',
+      url: `/books/${book.id}/cover`,
+      headers: { ...headers, ...body.headers },
+      payload: body.payload,
+    });
     expect(res.statusCode).toBe(403);
   });
 });

@@ -106,10 +106,38 @@ export class MockVisionProvider implements VisionProvider {
 
 export const MOCK_SHELF: ShelfOutput = {
   books: [
-    { position: 1, raw_text: 'DOSTOYEVSKI SUC VE CEZA ILETISIM', title: 'Suç ve Ceza', author: 'Fyodor Dostoyevski', publisher: 'İletişim', confidence: 0.92 },
-    { position: 2, raw_text: 'SABAHATTIN ALI KURK MANTOLU MADONNA YKY', title: 'Kürk Mantolu Madonna', author: 'Sabahattin Ali', publisher: 'Yapı Kredi', confidence: 0.95 },
-    { position: 3, raw_text: 'OGUZ ATAY TUTUNAMAYANLAR', title: 'Tutunamayanlar', author: 'Oğuz Atay', publisher: 'İletişim', confidence: 0.88 },
-    { position: 4, raw_text: 'ORHAN PAMUK MASUMIYET', title: 'Masumiyet', author: 'Orhan Pamuk', publisher: null, confidence: 0.55 },
+    {
+      position: 1,
+      raw_text: 'DOSTOYEVSKI SUC VE CEZA ILETISIM',
+      title: 'Suç ve Ceza',
+      author: 'Fyodor Dostoyevski',
+      publisher: 'İletişim',
+      confidence: 0.92,
+    },
+    {
+      position: 2,
+      raw_text: 'SABAHATTIN ALI KURK MANTOLU MADONNA YKY',
+      title: 'Kürk Mantolu Madonna',
+      author: 'Sabahattin Ali',
+      publisher: 'Yapı Kredi',
+      confidence: 0.95,
+    },
+    {
+      position: 3,
+      raw_text: 'OGUZ ATAY TUTUNAMAYANLAR',
+      title: 'Tutunamayanlar',
+      author: 'Oğuz Atay',
+      publisher: 'İletişim',
+      confidence: 0.88,
+    },
+    {
+      position: 4,
+      raw_text: 'ORHAN PAMUK MASUMIYET',
+      title: 'Masumiyet',
+      author: 'Orhan Pamuk',
+      publisher: null,
+      confidence: 0.55,
+    },
     { position: 5, raw_text: 'Y.K. BEYAZ GEC', title: 'Beyaz Gece', author: null, publisher: null, confidence: 0.3 },
   ],
   unreadable_count: 1,

@@ -136,26 +136,34 @@ function Option({
 }) {
   const { c } = useTheme();
   return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.option,
-        { paddingLeft: space.lg + depth * 20, backgroundColor: pressed ? c.bgSunken : 'transparent' },
-      ]}
-    >
-      {depth > 0 ? <Ionicons name="return-down-forward" size={14} color={c.textFaint} /> : null}
-      <AppText style={{ flex: 1 }} muted={muted} variant={depth === 0 && !muted ? 'label' : 'body'}>
-        {label}
-      </AppText>
-      {selected ? <Ionicons name="checkmark" size={20} color={c.primary} /> : null}
-      {onAddChild ? <IconButton icon="add-circle-outline" label={`${label} içine konum ekle`} onPress={onAddChild} color={c.textMuted} size={20} /> : null}
-    </Pressable>
+    <View style={[styles.option, { paddingLeft: space.lg + depth * 20 }]}>
+      <Pressable
+        accessibilityRole="radio"
+        accessibilityState={{ checked: selected }}
+        onPress={onPress}
+        style={({ pressed }) => [styles.optionMain, { opacity: pressed ? 0.6 : 1 }]}
+      >
+        {depth > 0 ? <Ionicons name="return-down-forward" size={14} color={c.textFaint} /> : null}
+        <AppText style={{ flex: 1 }} muted={muted} variant={depth === 0 && !muted ? 'label' : 'body'}>
+          {label}
+        </AppText>
+        {selected ? <Ionicons name="checkmark" size={20} color={c.primary} /> : null}
+      </Pressable>
+      {onAddChild ? (
+        <IconButton
+          icon="add-circle-outline"
+          label={`${label} içine konum ekle`}
+          onPress={onAddChild}
+          color={c.textMuted}
+          size={20}
+        />
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   option: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingRight: space.sm },
+  optionMain: { flex: 1, minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: space.sm },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 44 },
 });

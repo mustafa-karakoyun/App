@@ -148,7 +148,13 @@ export function BarcodeMode({ footer }: { footer: ReactNode }) {
       <View style={styles.bottom}>
         <View style={[styles.panel, { backgroundColor: c.bg }]}>
           {card ? (
-            <ResultCard card={card} continuous={continuous} onAdd={addCurrent} onDismiss={dismiss} locationPath={locationPath} />
+            <ResultCard
+              card={card}
+              continuous={continuous}
+              onAdd={addCurrent}
+              onDismiss={dismiss}
+              locationPath={locationPath}
+            />
           ) : typing ? (
             <View style={{ gap: space.md }}>
               <TextInput
@@ -266,12 +272,19 @@ function ResultCard({
               {item.book.title}
             </AppText>
             <AppText muted numberOfLines={1}>
-              {item.activeLoan ? `Şu an ${item.activeLoan.borrowerName}’de` : (item.locationPath ?? 'Konumu girilmemiş')}
+              {item.activeLoan
+                ? `Şu an ${item.activeLoan.borrowerName}’de`
+                : (item.locationPath ?? 'Konumu girilmemiş')}
             </AppText>
           </View>
           {close}
         </View>
-        <Button title="Kitaba git" kind="secondary" compact onPress={() => router.replace(`/book/${item.userBook.id}`)} />
+        <Button
+          title="Kitaba git"
+          kind="secondary"
+          compact
+          onPress={() => router.replace(`/book/${item.userBook.id}`)}
+        />
       </View>
     );
   }
@@ -284,7 +297,7 @@ function ResultCard({
           <View style={{ flex: 1, gap: 2 }}>
             {card.added ? (
               <AppText variant="overline" color={c.primary}>
-                Eklendi{locationPath ? ` · ${locationPath}` : ''}
+                {`Eklendi${locationPath ? ` · ${locationPath}` : ''}`}
               </AppText>
             ) : null}
             <AppText variant="bookTitle" numberOfLines={2}>
@@ -374,12 +387,31 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   reticleWrap: { position: 'absolute', top: '22%', left: 0, right: 0, alignItems: 'center', gap: space.md },
-  reticle: { width: '72%', maxWidth: 340, height: 120, borderWidth: 2, borderColor: 'rgba(245,240,230,0.85)', borderRadius: radius.md },
-  reticleText: { textAlign: 'center', paddingHorizontal: space.xl, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 4 },
+  reticle: {
+    width: '72%',
+    maxWidth: 340,
+    height: 120,
+    borderWidth: 2,
+    borderColor: 'rgba(245,240,230,0.85)',
+    borderRadius: radius.md,
+  },
+  reticleText: {
+    textAlign: 'center',
+    paddingHorizontal: space.xl,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowRadius: 4,
+  },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   panel: { borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: space.lg, gap: space.sm },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   idleRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   typeLink: { minHeight: 36, justifyContent: 'center' },
-  isbnInput: { minHeight: 50, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space.md, fontSize: 18, letterSpacing: 1 },
+  isbnInput: {
+    minHeight: 50,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: space.md,
+    fontSize: 18,
+    letterSpacing: 1,
+  },
 });

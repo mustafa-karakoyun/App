@@ -58,7 +58,11 @@ export default function LibraryScreen() {
           <AppText muted>{counts.all === 0 ? 'Henüz kitap yok' : `${counts.all} kitap`}</AppText>
         </View>
         {counts.all > 0 ? (
-          <IconButton icon={grid ? 'list-outline' : 'grid-outline'} label={grid ? 'Liste görünümü' : 'Kapak görünümü'} onPress={toggleView} />
+          <IconButton
+            icon={grid ? 'list-outline' : 'grid-outline'}
+            label={grid ? 'Liste görünümü' : 'Kapak görünümü'}
+            onPress={toggleView}
+          />
         ) : null}
       </View>
 
@@ -77,7 +81,15 @@ export default function LibraryScreen() {
               clearButtonMode="while-editing"
               accessibilityLabel="Kütüphanede ara"
             />
-            {search ? <IconButton icon="close-circle" label="Aramayı temizle" onPress={() => setSearch('')} color={c.textFaint} size={18} /> : null}
+            {search ? (
+              <IconButton
+                icon="close-circle"
+                label="Aramayı temizle"
+                onPress={() => setSearch('')}
+                color={c.textFaint}
+                size={18}
+              />
+            ) : null}
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
@@ -139,8 +151,17 @@ export default function LibraryScreen() {
           body="Rafının fotoğrafını çek, sırtı görünen kitapları tek seferde ekleyelim. Ya da barkodu okutarak tek tek ekle."
           action={
             <View style={{ gap: space.sm, width: '100%', maxWidth: 320 }}>
-              <Button title="Rafı tara" icon="scan" onPress={() => router.push({ pathname: '/scan', params: { mode: 'shelf' } })} />
-              <Button title="Barkod okut" kind="secondary" icon="barcode-outline" onPress={() => router.push({ pathname: '/scan', params: { mode: 'barcode' } })} />
+              <Button
+                title="Rafı tara"
+                icon="scan"
+                onPress={() => router.push({ pathname: '/scan', params: { mode: 'shelf' } })}
+              />
+              <Button
+                title="Barkod okut"
+                kind="secondary"
+                icon="barcode-outline"
+                onPress={() => router.push({ pathname: '/scan', params: { mode: 'barcode' } })}
+              />
             </View>
           }
         />
@@ -275,7 +296,12 @@ function GridItem({ item, width }: { item: LibraryItem; width: number }) {
       onPress={() => router.push(`/book/${userBook.id}`)}
       style={({ pressed }) => ({ width, opacity: pressed ? 0.7 : 1, gap: 4 })}
     >
-      <BookCover uri={book.localCoverUri ?? book.coverUrl} title={pending ? 'Bilgisi bekleniyor' : book.title} width={width} pending={pending} />
+      <BookCover
+        uri={book.localCoverUri ?? book.coverUrl}
+        title={pending ? 'Bilgisi bekleniyor' : book.title}
+        width={width}
+        pending={pending}
+      />
       <AppText variant="small" numberOfLines={2} style={{ fontWeight: '600' }}>
         {pending ? `ISBN ${book.isbn13}` : book.title}
       </AppText>
@@ -300,6 +326,12 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 16, paddingVertical: space.sm },
   chips: { gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.md, alignItems: 'center' },
   chipDivider: { width: StyleSheet.hairlineWidth, height: 24, marginHorizontal: space.xs },
-  listItem: { flexDirection: 'row', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md, alignItems: 'center' },
+  listItem: {
+    flexDirection: 'row',
+    gap: space.md,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    alignItems: 'center',
+  },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 });

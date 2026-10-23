@@ -247,7 +247,8 @@ export async function addManualBook(
   }
 
   if (book.source === 'manual' && !book.verified) {
-    const sameInfo = normalizeTitle(book.title) === normTitle && normalizeAuthor(book.authors.join(' ')) === normAuthors;
+    const sameInfo =
+      normalizeTitle(book.title) === normTitle && normalizeAuthor(book.authors.join(' ')) === normAuthors;
     if (sameInfo) {
       await db.query('INSERT INTO book_submissions (book_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [
         book.id,

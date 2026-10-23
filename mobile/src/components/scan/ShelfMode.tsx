@@ -77,7 +77,14 @@ export function ShelfMode({ footer }: { footer: ReactNode }) {
       const result = await uploadShelf(prepared);
       const id = newId();
       db.insert(pendingScans)
-        .values({ id, photoUri: prepared, status: 'done', result: JSON.stringify(result), error: null, createdAt: now() })
+        .values({
+          id,
+          photoUri: prepared,
+          status: 'done',
+          result: JSON.stringify(result),
+          error: null,
+          createdAt: now(),
+        })
         .run();
       notifyChange('pending_scans');
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -85,7 +92,10 @@ export function ShelfMode({ footer }: { footer: ReactNode }) {
     } catch (err) {
       if (isOffline(err) || (err instanceof ApiError && err.status >= 500)) {
         queueShelfPhoto(prepared);
-        toast({ message: 'İnternet yok gibi görünüyor. Fotoğraf kuyruğa alındı, hazır olunca haber vereceğiz.', durationMs: 5000 });
+        toast({
+          message: 'İnternet yok gibi görünüyor. Fotoğraf kuyruğa alındı, hazır olunca haber vereceğiz.',
+          durationMs: 5000,
+        });
         router.back();
         return;
       }
@@ -123,8 +133,20 @@ export function ShelfMode({ footer }: { footer: ReactNode }) {
             </AppText>
           )}
           <View style={styles.actions}>
-            <Button title="Yeniden çek" kind="onDark" onPress={() => setPhoto(null)} disabled={busy} style={styles.flex} />
-            <Button title={user ? 'Kitapları bul' : 'Giriş yap ve tara'} onPress={submit} loading={busy} style={styles.flex} />
+            <Button
+              title="Yeniden çek"
+              kind="onDark"
+              onPress={() => setPhoto(null)}
+              disabled={busy}
+              style={styles.flex}
+            />
+            <Button
+              title={user ? 'Kitapları bul' : 'Giriş yap ve tara'}
+              kind="onDarkPrimary"
+              onPress={submit}
+              loading={busy}
+              style={styles.flex}
+            />
           </View>
         </View>
       </View>
@@ -142,7 +164,12 @@ export function ShelfMode({ footer }: { footer: ReactNode }) {
       <View style={[styles.guide, { top: insets.top + 120 }]} pointerEvents="none" />
       <View style={styles.bottomCamera}>
         <View style={styles.shutterRow}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Galeriden seç" onPress={pickFromLibrary} style={styles.sideButton}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Galeriden seç"
+            onPress={pickFromLibrary}
+            style={styles.sideButton}
+          >
             <Ionicons name="images-outline" size={26} color="#F5F0E6" />
           </Pressable>
           <Pressable
@@ -181,7 +208,15 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(245,240,230,0.55)',
     borderRadius: radius.md,
   },
-  bottomCamera: { position: 'absolute', left: 0, right: 0, bottom: 0, gap: space.lg },
+  bottomCamera: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    gap: space.lg,
+    paddingTop: space.lg,
+    backgroundColor: 'rgba(15,14,12,0.55)',
+  },
   shutterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly' },
   shutter: {
     width: 76,

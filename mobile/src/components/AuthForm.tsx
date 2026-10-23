@@ -25,7 +25,8 @@ export function AuthForm({ mode, reason }: { mode: 'login' | 'register'; reason?
       if (mode === 'login') await signIn(email.trim(), password);
       else await signUp(email.trim(), password, name.trim() || undefined);
       toast(mode === 'login' ? 'Giriş yapıldı, kütüphanen eşitleniyor' : 'Hesabın hazır, kütüphanen yedekleniyor');
-      router.back();
+      if (router.canGoBack()) router.back();
+      else router.replace('/');
     } catch (err) {
       setError(
         isOffline(err)
@@ -40,17 +41,28 @@ export function AuthForm({ mode, reason }: { mode: 'login' | 'register'; reason?
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: c.bg }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg }} keyboardShouldPersistTaps="handled">
         {reason === 'scan' ? (
           <AppText muted>
             Raf tarama sunucuda yapıldığı için hesap gerekiyor. Hesabın aynı zamanda kütüphaneni yedekler.
           </AppText>
         ) : mode === 'register' ? (
-          <AppText muted>Kütüphanen yedeklenir; telefon değişince kaybolmaz. Şu ana kadar eklediğin kitaplar da hesaba aktarılır.</AppText>
+          <AppText muted>
+            Kütüphanen yedeklenir; telefon değişince kaybolmaz. Şu ana kadar eklediğin kitaplar da hesaba aktarılır.
+          </AppText>
         ) : null}
         {mode === 'register' ? (
-          <TextField label="Adın (isteğe bağlı)" value={name} onChangeText={setName} autoCapitalize="words" textContentType="name" />
+          <TextField
+            label="Adın (isteğe bağlı)"
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+            textContentType="name"
+          />
         ) : null}
         <TextField
           label="E-posta"
@@ -79,7 +91,13 @@ export function AuthForm({ mode, reason }: { mode: 'login' | 'register'; reason?
             title={mode === 'login' ? 'Hesabın yok mu? Oluştur' : 'Zaten hesabın var mı? Giriş yap'}
             kind="ghost"
             compact
-            onPress={() => router.replace(mode === 'login' ? { pathname: '/auth/register', params: { reason } } : { pathname: '/auth/login', params: { reason } })}
+            onPress={() =>
+              router.replace(
+                mode === 'login'
+                  ? { pathname: '/auth/register', params: { reason } }
+                  : { pathname: '/auth/login', params: { reason } },
+              )
+            }
           />
         </View>
       </ScrollView>

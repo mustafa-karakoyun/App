@@ -31,9 +31,7 @@ export async function getQuota(db: Pick<pg.Pool, 'query'>, userId: string, freeL
 }
 
 const confirmSchema = z.object({
-  items: z
-    .array(z.object({ position: z.number().int(), book_id: z.uuid().nullable() }))
-    .max(200),
+  items: z.array(z.object({ position: z.number().int(), book_id: z.uuid().nullable() })).max(200),
 });
 
 export async function scanRoutes(app: FastifyInstance, { db, providers, vision, config }: AppDeps) {
@@ -66,7 +64,10 @@ export async function scanRoutes(app: FastifyInstance, { db, providers, vision, 
       output = await readShelf(vision, photo);
     } catch (err) {
       req.log.error({ err, scanId }, 'raf okuma başarısız');
-      await db.query(`UPDATE scans SET status = 'failed', duration_ms = $2 WHERE id = $1`, [scanId, Date.now() - started]);
+      await db.query(`UPDATE scans SET status = 'failed', duration_ms = $2 WHERE id = $1`, [
+        scanId,
+        Date.now() - started,
+      ]);
       const isImageError = /Input buffer|unsupported image/i.test((err as Error).message);
       throw isImageError
         ? httpError(400, 'invalid_image', 'Fotoğraf okunamadı, tekrar çekmeyi dene')

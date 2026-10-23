@@ -87,7 +87,12 @@ export function deleteLocation(id: string) {
   if (affected.length) {
     db.update(userBooks)
       .set({ locationId: null, updatedAt: t })
-      .where(inArray(userBooks.id, affected.map((a) => a.id)))
+      .where(
+        inArray(
+          userBooks.id,
+          affected.map((a) => a.id),
+        ),
+      )
       .run();
     for (const a of affected) enqueue('user_books', a.id);
   }
@@ -95,11 +100,7 @@ export function deleteLocation(id: string) {
 }
 
 export function countBooksByLocation(): Map<string, number> {
-  const rows = db
-    .select({ locationId: userBooks.locationId })
-    .from(userBooks)
-    .where(isNull(userBooks.deletedAt))
-    .all();
+  const rows = db.select({ locationId: userBooks.locationId }).from(userBooks).where(isNull(userBooks.deletedAt)).all();
   const counts = new Map<string, number>();
   for (const r of rows) if (r.locationId) counts.set(r.locationId, (counts.get(r.locationId) ?? 0) + 1);
   return counts;

@@ -2,12 +2,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from '@/components/Toast';
 import { AppText } from '@/components/ui';
-import { db } from '@/db/client';
+import { db, ensureDb } from '@/db/client';
 import migrations from '@/db/migrations';
 import { restoreSession, useAuth } from '@/lib/auth';
 import { useAppLifecycle } from '@/lib/lifecycle';
@@ -26,6 +26,16 @@ function Lifecycle() {
 }
 
 export default function RootLayout() {
+  const { c } = useTheme();
+  const [dbReady, setDbReady] = useState(false);
+  useEffect(() => {
+    ensureDb().then(() => setDbReady(true));
+  }, []);
+  if (!dbReady) return <View style={{ flex: 1, backgroundColor: c.bg }} />;
+  return <App />;
+}
+
+function App() {
   const { c, dark } = useTheme();
   const migration = useMigrations(db, migrations);
   const { ready } = useAuth();
@@ -81,7 +91,10 @@ export default function RootLayout() {
               }}
             >
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="scan/index" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen
+                name="scan/index"
+                options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+              />
               <Stack.Screen name="scan/review" options={{ title: 'Onay listesi' }} />
               <Stack.Screen name="book/[id]" options={{ title: '' }} />
               <Stack.Screen name="book/add" options={{ title: 'Elle ekle', presentation: 'modal' }} />

@@ -37,7 +37,13 @@ export function lastSyncAt(): string | null {
 }
 
 export function pendingChangeCount(): number {
-  return new Set(db.select().from(outbox).all().map((o) => `${o.tableName}:${o.recordId}`)).size;
+  return new Set(
+    db
+      .select()
+      .from(outbox)
+      .all()
+      .map((o) => `${o.tableName}:${o.recordId}`),
+  ).size;
 }
 
 /** Çevrimdışı eklenen kitapları sunucu kataloğuyla eşler. Hesap gerekmez (ISBN araması açık). */
@@ -94,51 +100,66 @@ async function push() {
 
   const pendingBookIds = new Set(pendingBooks().map((b) => b.id));
   const locRows = idsFor('locations').length
-    ? db.select().from(locations).where(inArray(locations.id, idsFor('locations'))).all()
+    ? db
+        .select()
+        .from(locations)
+        .where(inArray(locations.id, idsFor('locations')))
+        .all()
     : [];
   const ubRows = idsFor('user_books').length
-    ? db.select().from(userBooks).where(inArray(userBooks.id, idsFor('user_books'))).all()
+    ? db
+        .select()
+        .from(userBooks)
+        .where(inArray(userBooks.id, idsFor('user_books')))
+        .all()
     : [];
-  const loanRows = idsFor('loans').length ? db.select().from(loans).where(inArray(loans.id, idsFor('loans'))).all() : [];
+  const loanRows = idsFor('loans').length
+    ? db
+        .select()
+        .from(loans)
+        .where(inArray(loans.id, idsFor('loans')))
+        .all()
+    : [];
 
   // Kitabı henüz sunucuda olmayan kayıtlar bekler; giden kutusunda kalırlar.
   const held = ubRows.filter((u) => pendingBookIds.has(u.bookId)).map((u) => u.id);
   const changes: SyncChanges = {
-    locations: locRows.map(
-      (r): Location => ({ id: r.id, name: r.name, parent_id: r.parentId, updated_at: r.updatedAt, deleted_at: r.deletedAt }),
-    ),
+    locations: locRows.map((r): Location => ({
+      id: r.id,
+      name: r.name,
+      parent_id: r.parentId,
+      updated_at: r.updatedAt,
+      deleted_at: r.deletedAt,
+    })),
     user_books: ubRows
       .filter((u) => !pendingBookIds.has(u.bookId))
-      .map(
-        (r): UserBook => ({
-          id: r.id,
-          book_id: r.bookId,
-          status: r.status,
-          location_id: r.locationId,
-          added_via: r.addedVia,
-          created_at: r.createdAt,
-          updated_at: r.updatedAt,
-          deleted_at: r.deletedAt,
-        }),
-      ),
-    loans: loanRows.map(
-      (r): Loan => ({
+      .map((r): UserBook => ({
         id: r.id,
-        user_book_id: r.userBookId,
-        borrower_name: r.borrowerName,
-        lent_at: r.lentAt,
-        due_at: r.dueAt,
-        returned_at: r.returnedAt,
+        book_id: r.bookId,
+        status: r.status,
+        location_id: r.locationId,
+        added_via: r.addedVia,
+        created_at: r.createdAt,
         updated_at: r.updatedAt,
         deleted_at: r.deletedAt,
-      }),
-    ),
+      })),
+    loans: loanRows.map((r): Loan => ({
+      id: r.id,
+      user_book_id: r.userBookId,
+      borrower_name: r.borrowerName,
+      lent_at: r.lentAt,
+      due_at: r.dueAt,
+      returned_at: r.returnedAt,
+      updated_at: r.updatedAt,
+      deleted_at: r.deletedAt,
+    })),
   };
 
   await api<SyncPushResponse>('/sync/push', { method: 'POST', body: { changes }, timeoutMs: 60_000 });
   // Reddedilenler sunucuda daha yeni sürümü olanlar; pull onları zaten getirecek.
   db.delete(outbox).where(lte(outbox.id, maxId)).run();
-  for (const id of held) db.insert(outbox).values({ tableName: 'user_books', recordId: id, createdAt: new Date().toISOString() }).run();
+  for (const id of held)
+    db.insert(outbox).values({ tableName: 'user_books', recordId: id, createdAt: new Date().toISOString() }).run();
 }
 
 /** Gelen kayıt yalnızca yereldekinden yeniyse ve yerelde gönderilmemiş değişiklik yoksa yazılır. */
@@ -155,7 +176,13 @@ async function pull() {
   });
   upsertCatalogBooks(res.books);
 
-  const pendingIds = new Set(db.select().from(outbox).all().map((o) => o.recordId));
+  const pendingIds = new Set(
+    db
+      .select()
+      .from(outbox)
+      .all()
+      .map((o) => o.recordId),
+  );
 
   db.$client.withTransactionSync(() => {
     for (const r of res.changes.locations) {
@@ -180,11 +207,7 @@ async function pull() {
       db.insert(userBooks).values(row).onConflictDoUpdate({ target: userBooks.id, set: row }).run();
     }
     for (const r of res.changes.loans) {
-      const local = db
-        .select({ u: loans.updatedAt })
-        .from(loans)
-        .where(eq(loans.id, r.id))
-        .get();
+      const local = db.select({ u: loans.updatedAt }).from(loans).where(eq(loans.id, r.id)).get();
       if (!shouldApply(local?.u, r.updated_at, pendingIds.has(r.id))) continue;
       const row = {
         id: r.id,

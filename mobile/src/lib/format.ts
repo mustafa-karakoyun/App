@@ -9,7 +9,20 @@ export const STATUS_LABELS: Record<ReadingStatus, string> = {
 
 export const STATUS_ORDER: ReadingStatus[] = ['reading', 'to_read', 'read', 'abandoned'];
 
-const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+const MONTHS = [
+  'Ocak',
+  'Şubat',
+  'Mart',
+  'Nisan',
+  'Mayıs',
+  'Haziran',
+  'Temmuz',
+  'Ağustos',
+  'Eylül',
+  'Ekim',
+  'Kasım',
+  'Aralık',
+];
 
 export function formatDate(iso: string | null | undefined, withYear = false): string {
   if (!iso) return '';

@@ -43,7 +43,9 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
       >
         <View>
           <Ionicons name={focused ? meta.iconActive : meta.icon} size={24} color={focused ? c.primary : c.textMuted} />
-          {routeName === 'loans' && overdue > 0 ? <View style={[styles.dot, { backgroundColor: c.accent, borderColor: c.bg }]} /> : null}
+          {routeName === 'loans' && overdue > 0 ? (
+            <View style={[styles.dot, { backgroundColor: c.accent, borderColor: c.bg }]} />
+          ) : null}
         </View>
         <Text style={[type.small, { color: focused ? c.primary : c.textMuted, fontWeight: focused ? '600' : '400' }]}>
           {meta.label}
@@ -53,7 +55,12 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   return (
-    <View style={[styles.bar, { backgroundColor: c.bg, borderTopColor: c.hairline, paddingBottom: Math.max(insets.bottom, space.sm) }]}>
+    <View
+      style={[
+        styles.bar,
+        { backgroundColor: c.bg, borderTopColor: c.hairline, paddingBottom: Math.max(insets.bottom, space.sm) },
+      ]}
+    >
       {tab('index')}
       <View style={styles.tab}>
         <Pressable

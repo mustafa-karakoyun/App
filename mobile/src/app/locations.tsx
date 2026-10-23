@@ -5,7 +5,14 @@ import { Sheet } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { AppText, Button, Divider, EmptyState, IconButton, TextField } from '@/components/ui';
 import { useDbQuery } from '@/db/changes';
-import { countBooksByLocation, createLocation, deleteLocation, locationTree, renameLocation, type LocationNode } from '@/data/locations';
+import {
+  countBooksByLocation,
+  createLocation,
+  deleteLocation,
+  locationTree,
+  renameLocation,
+  type LocationNode,
+} from '@/data/locations';
 import { confirm } from '@/lib/confirm';
 import { space, useTheme } from '@/theme';
 
@@ -58,40 +65,58 @@ export default function LocationsScreen() {
         )}
         {tree.map((node) => (
           <View key={node.id}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityHint="Yeniden adlandır ya da sil"
-              onPress={() => open({ mode: 'rename', node })}
-              style={({ pressed }) => [
-                styles.row,
-                { paddingLeft: space.lg + node.depth * 22, backgroundColor: pressed ? c.bgSunken : 'transparent' },
-              ]}
-            >
-              {node.depth > 0 ? <Ionicons name="return-down-forward" size={14} color={c.textFaint} /> : null}
-              <AppText variant={node.depth === 0 ? 'label' : 'body'} style={{ flex: 1, fontSize: 16 }}>
-                {node.name}
-              </AppText>
-              <AppText variant="small" faint>
-                {counts.get(node.id) ? `${counts.get(node.id)} kitap` : ''}
-              </AppText>
-              <IconButton icon="add-circle-outline" label={`${node.name} içine ekle`} color={c.textMuted} size={20} onPress={() => open({ mode: 'create', parent: node })} />
-            </Pressable>
+            <View style={[styles.row, { paddingLeft: space.lg + node.depth * 22 }]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityHint="Yeniden adlandır ya da sil"
+                onPress={() => open({ mode: 'rename', node })}
+                style={({ pressed }) => [styles.rowMain, { opacity: pressed ? 0.6 : 1 }]}
+              >
+                {node.depth > 0 ? <Ionicons name="return-down-forward" size={14} color={c.textFaint} /> : null}
+                <AppText variant={node.depth === 0 ? 'label' : 'body'} style={{ flex: 1, fontSize: 16 }}>
+                  {node.name}
+                </AppText>
+                <AppText variant="small" faint>
+                  {counts.get(node.id) ? `${counts.get(node.id)} kitap` : ''}
+                </AppText>
+              </Pressable>
+              <IconButton
+                icon="add-circle-outline"
+                label={`${node.name} içine ekle`}
+                color={c.textMuted}
+                size={20}
+                onPress={() => open({ mode: 'create', parent: node })}
+              />
+            </View>
             <Divider inset={space.lg + node.depth * 22} />
           </View>
         ))}
         <View style={{ padding: space.lg }}>
-          <Button title="Oda ya da alan ekle" icon="add" kind="secondary" onPress={() => open({ mode: 'create', parent: null })} />
+          <Button
+            title="Oda ya da alan ekle"
+            icon="add"
+            kind="secondary"
+            onPress={() => open({ mode: 'create', parent: null })}
+          />
         </View>
       </ScrollView>
 
       <Sheet
         visible={!!editing}
         onClose={() => setEditing(null)}
-        title={editing?.mode === 'rename' ? 'Konumu düzenle' : editing?.parent ? `“${editing.parent.path}” içine` : 'Yeni konum'}
+        title={
+          editing?.mode === 'rename'
+            ? 'Konumu düzenle'
+            : editing?.parent
+              ? `“${editing.parent.path}” içine`
+              : 'Yeni konum'
+        }
         footer={
           <View style={{ gap: space.sm }}>
             <Button title="Kaydet" onPress={save} disabled={!name.trim()} />
-            {editing?.mode === 'rename' ? <Button title="Sil" kind="danger" onPress={() => remove(editing.node)} /> : null}
+            {editing?.mode === 'rename' ? (
+              <Button title="Sil" kind="danger" onPress={() => remove(editing.node)} />
+            ) : null}
           </View>
         }
       >
@@ -112,4 +137,5 @@ export default function LocationsScreen() {
 
 const styles = StyleSheet.create({
   row: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingRight: space.sm },
+  rowMain: { flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: space.sm },
 });

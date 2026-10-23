@@ -47,8 +47,7 @@ function fromGoogle(item: GoogleVolume): ExternalBook | null {
   const v = item.volumeInfo;
   if (!v?.title) return null;
   const ids = v.industryIdentifiers ?? [];
-  const isbn =
-    ids.find((i) => i.type === 'ISBN_13')?.identifier ?? ids.find((i) => i.type === 'ISBN_10')?.identifier;
+  const isbn = ids.find((i) => i.type === 'ISBN_13')?.identifier ?? ids.find((i) => i.type === 'ISBN_10')?.identifier;
   return {
     isbn13: isbn ? toIsbn13(isbn) : null,
     title: v.title,
