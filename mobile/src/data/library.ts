@@ -402,3 +402,7 @@ export async function undoAdd(ids: string[]) {
   for (const id of ids) await removeFromLibrary(id);
   setRecentAdd([], null);
 }
+
+export function getBookRow(id: string): BookRow | null {
+  return db.select().from(books).where(eq(books.id, id)).get() ?? null;
+}

@@ -21,7 +21,9 @@ import { AppText, Button, Chip, EmptyState, IconButton, LinkButton, Row, Section
 import { useDbQuery } from '@/db/changes';
 import { getKv, setKv } from '@/data/kv';
 import { listLibrary, recentAdd, statusCounts, type LibraryItem, type SortKey } from '@/data/library';
+import { searchNotes, userBooksWithQuotes } from '@/data/notes';
 import { listPendingScans } from '@/data/scans';
+import { NoteItem } from '@/components/NoteItem';
 import { dueText, locative, STATUS_LABELS, STATUS_ORDER, untilText } from '@/lib/format';
 import { radius, space, useTheme } from '@/theme';
 
@@ -34,6 +36,7 @@ export default function LibraryScreen() {
   const { width } = useWindowDimensions();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ReadingStatus | null>(null);
+  const [withQuotes, setWithQuotes] = useState(false);
   const [location, setLocation] = useState<{ id: string; path: string } | null>(null);
   const [sort, setSort] = useState<SortKey>(() => (getKv('library.sort') as SortKey) ?? 'recent');
   const [grid, setGrid] = useState(() => getKv('library.view') === 'grid');
@@ -41,15 +44,17 @@ export default function LibraryScreen() {
   const [sortSheet, setSortSheet] = useState(false);
 
   const items = useDbQuery(
-    () => listLibrary({ search, status, locationId: location?.id ?? null, sort }),
-    [search, status, location?.id, sort],
+    () => listLibrary({ search, status, locationId: location?.id ?? null, sort, withQuotes }),
+    [search, status, location?.id, sort, withQuotes],
     ['user_books', 'books', 'locations', 'loans'],
   );
   const counts = useDbQuery(() => statusCounts(), [], ['user_books']);
+  const quotedCount = useDbQuery(() => userBooksWithQuotes().size, [], ['notes', 'user_books']);
+  const noteHits = useDbQuery(() => (search.trim().length >= 2 ? searchNotes(search) : []), [search], ['notes']);
   const recent = useDbQuery(() => recentAdd(), [], ['kv', 'user_books']);
   const pendingScans = useDbQuery(() => listPendingScans().filter((s) => s.status !== 'failed'), [], ['pending_scans']);
 
-  const filtered = !!search || !!status || !!location;
+  const filtered = !!search || !!status || !!location || withQuotes;
   const contentWidth = Math.min(width, 900) - space.lg * 2;
   const columns = Math.max(3, Math.floor(contentWidth / 120));
   const coverWidth = Math.floor((contentWidth - 14 * (columns - 1)) / columns);
@@ -59,6 +64,7 @@ export default function LibraryScreen() {
     setSearch('');
     setStatus(null);
     setLocation(null);
+    setWithQuotes(false);
   };
 
   const toggleView = () => {
@@ -66,7 +72,12 @@ export default function LibraryScreen() {
     setGrid(!grid);
   };
 
-  const subtitle = counts.all === 0 ? 'Henüz kitap yok' : filtered ? `${items.length} sonuç` : `${counts.all} kitap`;
+  const subtitle =
+    counts.all === 0
+      ? 'Henüz kitap yok'
+      : filtered
+        ? `${items.length} kitap${noteHits.length ? ` · ${noteHits.length} alıntı` : ''}`
+        : `${counts.all} kitap`;
 
   const header = (
     <View style={{ paddingTop: insets.top + space.lg }}>
@@ -138,8 +149,26 @@ export default function LibraryScreen() {
                 onPress={() => setStatus(null)}
               />
             ) : null}
+            {withQuotes ? (
+              <Chip
+                label="Alıntısı olanlar"
+                icon="bookmark-outline"
+                count={quotedCount}
+                selected
+                removable
+                onPress={() => setWithQuotes(false)}
+              />
+            ) : null}
             {!location ? <Chip label="Konum" icon="location-outline" onPress={() => setPicker(true)} /> : null}
             <Chip label={SORT_LABELS[sort]} icon="swap-vertical" onPress={() => setSortSheet(true)} />
+            {!withQuotes && quotedCount > 0 ? (
+              <Chip
+                label="Alıntısı olanlar"
+                icon="bookmark-outline"
+                count={quotedCount}
+                onPress={() => setWithQuotes(true)}
+              />
+            ) : null}
             {STATUS_ORDER.filter((s) => s !== status).map((s) => (
               <Chip key={s} label={STATUS_CHIP[s]} count={counts[s]} onPress={() => setStatus(s)} />
             ))}
@@ -246,6 +275,56 @@ export default function LibraryScreen() {
           contentContainerStyle={{ gap: 18, paddingBottom: 60 }}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => <GridItem item={item} width={coverWidth} />}
+        />
+      ) : noteHits.length > 0 ? (
+        <SectionList
+          sections={
+            [
+              {
+                key: 'books',
+                title: `Kitaplar · ${items.length}`,
+                data: items.map((i) => ({ kind: 'book' as const, item: i })),
+              },
+              {
+                key: 'quotes',
+                title: `Alıntılarda · ${noteHits.length}`,
+                data: noteHits.map((h) => ({ kind: 'note' as const, hit: h })),
+              },
+            ] as {
+              key: string;
+              title: string;
+              data: ({ kind: 'book'; item: LibraryItem } | { kind: 'note'; hit: (typeof noteHits)[number] })[];
+            }[]
+          }
+          keyExtractor={(row) => (row.kind === 'book' ? row.item.userBook.id : row.hit.note.id)}
+          ListHeaderComponent={header}
+          renderSectionHeader={({ section }) =>
+            section.data.length ? <SectionLabel style={{ backgroundColor: c.bg }}>{section.title}</SectionLabel> : null
+          }
+          stickySectionHeadersEnabled={false}
+          contentContainerStyle={{ paddingBottom: 60 }}
+          keyboardShouldPersistTaps="handled"
+          ListFooterComponent={
+            <AppText variant="small" faint style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>
+              Alıntıya dokununca kitabın notları açılır.
+            </AppText>
+          }
+          renderItem={({ item: row }) =>
+            row.kind === 'book' ? (
+              <ListItem item={row.item} />
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push(`/book/notes/${row.hit.userBookId}`)}
+                style={({ pressed }) => [styles.noteHit, { borderBottomColor: c.hairline, opacity: pressed ? 0.6 : 1 }]}
+              >
+                <View style={{ flex: 1 }}>
+                  <NoteItem note={row.hit.note} source={row.hit.book.title} lines={3} />
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
+              </Pressable>
+            )
+          }
         />
       ) : recentItems.length > 0 ? (
         <SectionList
@@ -475,6 +554,14 @@ const styles = StyleSheet.create({
     paddingRight: space.lg,
     paddingBottom: 12,
     minHeight: 84,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  noteHit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    marginLeft: space.lg,
+    paddingRight: space.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },

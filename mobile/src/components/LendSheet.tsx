@@ -1,8 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { lendBook, recentBorrowers } from '@/data/loans';
 import { formatDate } from '@/lib/format';
-import { space } from '@/theme';
+import { space, useTheme } from '@/theme';
 import { Sheet } from './Sheet';
 import { AppText, Button, Chip, TextField } from './ui';
 
@@ -21,7 +22,7 @@ function addDays(days: number) {
   return d.toISOString();
 }
 
-/** Ödünç verme: isim + iade süresi, iki dokunuş. Ad yalnızca cihazda ve kullanıcının yedeğinde tutulur. */
+/** "İki dokunuşta ödünç": kişi çipi + Kaydet. Varsayılan iade 2 hafta. */
 export function LendSheet({
   visible,
   onClose,
@@ -35,6 +36,7 @@ export function LendSheet({
   bookTitle: string;
   onDone: (borrower: string) => void;
 }) {
+  const { c } = useTheme();
   const [name, setName] = useState('');
   const [days, setDays] = useState<number | null>(14);
   const [saving, setSaving] = useState(false);
@@ -47,6 +49,7 @@ export function LendSheet({
       await lendBook(userBookId, name, days === null ? null : addDays(days));
       onDone(name.trim());
       setName('');
+      setDays(14);
     } finally {
       setSaving(false);
     }
@@ -57,41 +60,48 @@ export function LendSheet({
       visible={visible}
       onClose={onClose}
       title="Ödünç ver"
+      subtitle={`“${bookTitle}”`}
       footer={<Button title="Kaydet" onPress={save} loading={saving} disabled={!name.trim()} />}
     >
-      <View style={{ paddingHorizontal: space.lg, gap: space.lg, paddingBottom: space.sm }}>
-        <AppText muted numberOfLines={2}>
-          “{bookTitle}”
-        </AppText>
+      <View style={{ paddingHorizontal: space.lg, gap: space.md, paddingBottom: space.sm }}>
         <TextField
           label="Kime?"
-          placeholder="Ad"
+          placeholder="Ad yaz"
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
           returnKeyType="done"
           onSubmitEditing={save}
+          style={name ? { borderColor: c.primary, borderWidth: 1.6 } : undefined}
         />
         {recent.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }}>
             {recent.map((r) => (
-              <Chip key={r} label={r} selected={name === r} onPress={() => setName(r)} />
+              <Chip key={r} label={r} filled selected={name === r} onPress={() => setName(r)} />
             ))}
           </ScrollView>
         ) : null}
-        <View style={{ gap: space.sm }}>
-          <AppText variant="label" muted>
-            İade
-          </AppText>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
-            {DUE_OPTIONS.map((o) => (
-              <Chip key={o.label} label={o.label} selected={days === o.days} onPress={() => setDays(o.days)} />
-            ))}
-          </View>
-          <AppText variant="small" faint>
+        <AppText variant="overline" muted style={{ marginTop: space.md }}>
+          İade
+        </AppText>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+          {DUE_OPTIONS.map((o) => (
+            <Chip key={o.label} label={o.label} selected={days === o.days} onPress={() => setDays(o.days)} />
+          ))}
+        </ScrollView>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.xs }}>
+          <Ionicons
+            name={days === null ? 'notifications-off-outline' : 'notifications-outline'}
+            size={18}
+            color={c.textMuted}
+          />
+          <AppText variant="secondary" style={days === null ? { color: c.textMuted } : { fontWeight: '600' }}>
             {days === null ? 'Hatırlatma kurulmayacak.' : `${formatDate(addDays(days), true)} sabahı hatırlatacağız.`}
           </AppText>
         </View>
+        <AppText variant="small" faint style={{ fontSize: 12 }}>
+          Rehberine erişmiyoruz; yalnızca ad saklanır.
+        </AppText>
       </View>
     </Sheet>
   );

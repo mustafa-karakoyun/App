@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useDbQuery } from '@/db/changes';
 import { createLocation, locationTree } from '@/data/locations';
 import { space, useTheme } from '@/theme';
 import { Sheet } from './Sheet';
-import { AppText, Button, Divider, IconButton, TextField } from './ui';
+import { AppText, Button, Divider, IconButton, LinkButton } from './ui';
 
 /**
  * Konum seçici. Ağaç girintili listelenir; her satırdaki "+" o konumun içine yeni
@@ -17,8 +17,10 @@ export function LocationPicker({
   onClose,
   onSelect,
   title = 'Konum seç',
+  subtitle,
   allowNone = true,
 }: {
+  subtitle?: string | null;
   visible: boolean;
   value: string | null;
   onClose: () => void;
@@ -50,8 +52,31 @@ export function LocationPicker({
     onSelect(created.id, path);
   };
 
+  const inlineForm = (
+    <View style={[styles.inline, { backgroundColor: c.primarySoft }]}>
+      <AppText variant="small" muted style={{ fontWeight: '600' }}>
+        {parent ? `“${parent.path}” içine` : 'Yeni oda ya da alan'}
+      </AppText>
+      <TextInput
+        autoFocus
+        placeholder={parent ? 'ör. 2. raf' : 'ör. Salon'}
+        placeholderTextColor={c.textFaint}
+        value={draft}
+        onChangeText={setDraft}
+        onSubmitEditing={submit}
+        returnKeyType="done"
+        accessibilityLabel="Yeni konumun adı"
+        style={[styles.inlineInput, { color: c.text, backgroundColor: c.surface, borderColor: c.primary }]}
+      />
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: space.md }}>
+        <LinkButton title="Vazgeç" color={c.textMuted} onPress={() => setAdding(false)} />
+        <Button title="Ekle ve seç" compact onPress={submit} disabled={!draft.trim()} style={styles.inlineButton} />
+      </View>
+    </View>
+  );
+
   return (
-    <Sheet visible={visible} onClose={close} title={title}>
+    <Sheet visible={visible} onClose={close} title={title} subtitle={subtitle}>
       {allowNone ? (
         <>
           <Option label="Konumsuz" selected={value === null} onPress={() => onSelect(null, null)} depth={0} muted />
@@ -75,44 +100,28 @@ export function LocationPicker({
             onPress={() => onSelect(node.id, node.path)}
             onAddChild={() => {
               setParent({ id: node.id, path: node.path });
+              setDraft('');
               setAdding(true);
             }}
           />
-          <Divider inset={space.lg + node.depth * 20} />
+          <Divider inset={space.lg + node.depth * 26} />
+          {adding && parent?.id === node.id ? inlineForm : null}
         </View>
       ))}
 
-      <View style={{ padding: space.lg, gap: space.md }}>
-        {adding ? (
-          <>
-            <TextField
-              autoFocus
-              label={parent ? `“${parent.path}” içine` : 'Yeni konum'}
-              placeholder={parent ? 'ör. 2. raf' : 'ör. Salon'}
-              value={draft}
-              onChangeText={setDraft}
-              onSubmitEditing={submit}
-              returnKeyType="done"
-            />
-            <View style={{ flexDirection: 'row', gap: space.sm }}>
-              <Button title="Vazgeç" kind="ghost" compact onPress={() => setAdding(false)} style={{ flex: 1 }} />
-              <Button title="Ekle ve seç" compact onPress={submit} disabled={!draft.trim()} style={{ flex: 1 }} />
-            </View>
-          </>
+      <View style={{ padding: space.lg }}>
+        {adding && !parent ? (
+          inlineForm
         ) : (
-          <Pressable
-            accessibilityRole="button"
+          <LinkButton
+            title="Yeni konum"
+            icon="add"
             onPress={() => {
               setParent(null);
+              setDraft('');
               setAdding(true);
             }}
-            style={styles.addRow}
-          >
-            <Ionicons name="add" size={20} color={c.primary} />
-            <AppText color={c.primary} variant="label" style={{ fontSize: 16 }}>
-              Yeni konum
-            </AppText>
-          </Pressable>
+          />
         )}
       </View>
     </Sheet>
@@ -136,34 +145,34 @@ function Option({
 }) {
   const { c } = useTheme();
   return (
-    <View style={[styles.option, { paddingLeft: space.lg + depth * 20 }]}>
+    <View style={[styles.option, { paddingLeft: space.lg + depth * 26 }]}>
       <Pressable
         accessibilityRole="radio"
         accessibilityState={{ checked: selected }}
         onPress={onPress}
         style={({ pressed }) => [styles.optionMain, { opacity: pressed ? 0.6 : 1 }]}
       >
-        {depth > 0 ? <Ionicons name="return-down-forward" size={14} color={c.textFaint} /> : null}
-        <AppText style={{ flex: 1 }} muted={muted} variant={depth === 0 && !muted ? 'label' : 'body'}>
+        {muted ? null : depth > 0 ? (
+          <Ionicons name="return-down-forward" size={16} color={c.textFaint} />
+        ) : (
+          <Ionicons name="location-outline" size={22} color={c.textMuted} />
+        )}
+        <AppText style={{ flex: 1, fontWeight: depth === 0 && !muted ? '600' : '400' }} muted={muted}>
           {label}
         </AppText>
-        {selected ? <Ionicons name="checkmark" size={20} color={c.primary} /> : null}
+        {selected ? <Ionicons name="checkmark" size={22} color={c.primary} /> : null}
       </Pressable>
       {onAddChild ? (
-        <IconButton
-          icon="add-circle-outline"
-          label={`${label} içine konum ekle`}
-          onPress={onAddChild}
-          color={c.textMuted}
-          size={20}
-        />
+        <IconButton icon="add" label={`${label} içine konum ekle`} onPress={onAddChild} color={c.text} size={24} />
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  option: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingRight: space.sm },
+  inline: { marginHorizontal: space.lg, marginVertical: space.sm, padding: space.md, borderRadius: 12, gap: space.sm },
+  inlineInput: { height: 40, borderRadius: 10, borderWidth: 1.4, paddingHorizontal: space.md, fontSize: 16 },
+  inlineButton: { minHeight: 40, borderRadius: 10, paddingHorizontal: space.lg },
+  option: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingRight: space.sm },
   optionMain: { flex: 1, minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 44 },
 });

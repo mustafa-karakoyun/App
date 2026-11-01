@@ -85,7 +85,7 @@ function App() {
                 headerShadowVisible: false,
                 headerStyle: { backgroundColor: c.bg },
                 headerTintColor: c.primary,
-                headerTitleStyle: { color: c.text },
+                headerTitleStyle: { color: c.text, fontSize: 16, fontWeight: '600' },
                 headerBackButtonDisplayMode: 'minimal',
                 contentStyle: { backgroundColor: c.bg },
               }}
@@ -97,10 +97,16 @@ function App() {
               />
               <Stack.Screen name="scan/review" options={{ title: 'Onay listesi' }} />
               <Stack.Screen name="book/[id]" options={{ title: '' }} />
-              <Stack.Screen name="book/add" options={{ title: 'Elle ekle', presentation: 'modal' }} />
-              <Stack.Screen name="locations" options={{ title: 'Konumlar' }} />
-              <Stack.Screen name="auth/login" options={{ title: 'Giriş yap', presentation: 'modal' }} />
-              <Stack.Screen name="auth/register" options={{ title: 'Hesap oluştur', presentation: 'modal' }} />
+              <Stack.Screen name="book/notes/[id]" options={{ title: '' }} />
+              <Stack.Screen name="notes" options={{ title: '' }} />
+              <Stack.Screen
+                name="book/add"
+                options={{ title: 'Elle ekle', presentation: 'modal', headerTitleAlign: 'center' }}
+              />
+              <Stack.Screen name="locations" options={{ title: 'Konumlar', headerTitleAlign: 'center' }} />
+              <Stack.Screen name="loans-history" options={{ title: 'İade edilenler', headerTitleAlign: 'center' }} />
+              <Stack.Screen name="auth/login" options={{ title: '', presentation: 'modal' }} />
+              <Stack.Screen name="auth/register" options={{ title: '', presentation: 'modal' }} />
             </Stack>
           </ToastProvider>
         </ThemeProvider>

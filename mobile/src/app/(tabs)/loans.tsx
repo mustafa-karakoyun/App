@@ -1,34 +1,43 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BookCover } from '@/components/BookCover';
 import { useToast } from '@/components/Toast';
-import { AppText, Button, Divider, EmptyState, SectionLabel } from '@/components/ui';
+import { AppText, EmptyState, LinkButton, PillButton, SectionLabel } from '@/components/ui';
 import { useDbQuery } from '@/db/changes';
-import { activeLoans, returnedLoans, returnLoan, type LoanItem } from '@/data/loans';
-import { dueText, formatDate } from '@/lib/format';
-import { space, useTheme } from '@/theme';
+import { activeLoans, returnedLoans, returnLoan, undoReturn, type LoanItem } from '@/data/loans';
+import { dueText, formatDate, wasText } from '@/lib/format';
+import { serif, space, useTheme } from '@/theme';
 
-/** Kimde ne var: iade tarihi geçenler en üstte. */
+/** Kimde ne var: iade tarihi geçenler en üstte, kişi adı en belirgin. */
 export default function LoansScreen() {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const active = useDbQuery(() => activeLoans(), [], ['loans', 'user_books', 'books']);
-  const [showHistory, setShowHistory] = useState(false);
-  const history = useDbQuery(() => (showHistory ? returnedLoans() : []), [showHistory], ['loans']);
+  const returnedCount = useDbQuery(() => returnedLoans(500).length, [], ['loans']);
 
   const overdue = active.filter((l) => l.loan.dueAt && dueText(l.loan.dueAt).overdue);
   const current = active.filter((l) => !overdue.includes(l));
+  const historyLink = (
+    <LinkButton
+      title={returnedCount ? `İade edilenleri göster (${returnedCount})` : 'İade edilenleri göster'}
+      onPress={() => router.push('/loans-history')}
+    />
+  );
 
   return (
     <ScrollView
       style={{ backgroundColor: c.bg }}
-      contentContainerStyle={{ paddingTop: insets.top + space.md, paddingBottom: space.xxl }}
+      contentContainerStyle={{ paddingTop: insets.top + space.lg, paddingBottom: 60, flexGrow: 1 }}
     >
       <View style={{ paddingHorizontal: space.lg }}>
         <AppText variant="display">Ödünçte</AppText>
-        <AppText muted>{active.length ? `${active.length} kitap başkasında` : 'Tüm kitapların evde'}</AppText>
+        <AppText variant="sub" muted>
+          {active.length
+            ? `${active.length} kitap başkasında${overdue.length ? ` · ${overdue.length} gecikti` : ''}`
+            : 'Tüm kitapların evde'}
+        </AppText>
       </View>
 
       {active.length === 0 ? (
@@ -36,111 +45,114 @@ export default function LoansScreen() {
           icon="swap-horizontal-outline"
           title="Ödünçte kitap yok"
           body="Bir kitabı ödünç verirken kitabın sayfasından “Ödünç ver”e dokun; iade günü sana hatırlatalım."
+          action={returnedCount ? historyLink : undefined}
         />
       ) : null}
 
       {overdue.length ? (
         <>
-          <SectionLabel>
-            <AppText variant="overline" color={c.accent}>
-              İadesi gecikenler
-            </AppText>
-          </SectionLabel>
-          <Divider />
-          {overdue.map((l) => (
-            <LoanRow key={l.loan.id} item={l} />
+          <SectionLabel
+            color={c.accent}
+            style={{ paddingTop: space.md }}
+          >{`İadesi gecikenler · ${overdue.length}`}</SectionLabel>
+          {overdue.map((l, i) => (
+            <LoanRow key={l.loan.id} item={l} last={i === overdue.length - 1} />
           ))}
         </>
       ) : null}
       {current.length ? (
         <>
-          <SectionLabel>Ödünçte</SectionLabel>
-          <Divider />
-          {current.map((l) => (
-            <LoanRow key={l.loan.id} item={l} />
+          <SectionLabel
+            style={overdue.length ? undefined : { paddingTop: space.md }}
+          >{`Ödünçte · ${current.length}`}</SectionLabel>
+          {current.map((l, i) => (
+            <LoanRow key={l.loan.id} item={l} last={i === current.length - 1} />
           ))}
         </>
       ) : null}
 
-      <View style={{ padding: space.lg }}>
-        <Button
-          title={showHistory ? 'Geçmişi gizle' : 'İade edilenleri göster'}
-          kind="ghost"
-          compact
-          onPress={() => setShowHistory((s) => !s)}
-        />
-      </View>
-      {showHistory ? (
-        history.length ? (
-          <>
-            <Divider />
-            {history.map((h) => (
-              <View key={h.loan.id}>
-                <Pressable onPress={() => router.push(`/book/${h.userBookId}`)} style={styles.historyRow}>
-                  <AppText numberOfLines={1} style={{ flex: 1 }}>
-                    {h.book.title}
-                  </AppText>
-                  <AppText variant="small" muted>
-                    {h.loan.borrowerName} · {formatDate(h.loan.returnedAt)}
-                  </AppText>
-                </Pressable>
-                <Divider inset={space.lg} />
-              </View>
-            ))}
-          </>
-        ) : (
-          <AppText muted style={{ paddingHorizontal: space.lg }}>
-            Henüz iade edilen kitap yok.
+      {active.length ? (
+        <Pressable accessibilityRole="button" onPress={() => router.push('/loans-history')} style={styles.history}>
+          <AppText color={c.primary} style={{ fontWeight: '600', fontSize: 15 }}>
+            İade edilenleri göster
           </AppText>
-        )
+          <Ionicons name="chevron-down" size={18} color={c.primary} />
+        </Pressable>
       ) : null}
     </ScrollView>
   );
 }
 
-function LoanRow({ item }: { item: LoanItem }) {
+function LoanRow({ item, last }: { item: LoanItem; last: boolean }) {
   const { c } = useTheme();
   const toast = useToast();
   const { loan, book } = item;
   const due = loan.dueAt ? dueText(loan.dueAt) : null;
+  const tone = due?.overdue ? c.accent : due ? c.warning : c.textMuted;
+  const when = due
+    ? due.overdue
+      ? `${due.text} · ${wasText(loan.dueAt!)}`
+      : `${formatDate(loan.dueAt)} · ${due.text}`
+    : `${formatDate(loan.lentAt)} tarihinden beri · tarihsiz`;
   return (
-    <View>
-      <View style={styles.row}>
+    <View style={styles.row}>
+      <View
+        style={[
+          styles.rowMain,
+          { borderBottomColor: c.hairline, borderBottomWidth: last ? 0 : StyleSheet.hairlineWidth },
+        ]}
+      >
         <Pressable
           accessibilityRole="button"
-          onPress={() => router.push(`/book/${item.userBookId}`)}
-          style={({ pressed }) => [styles.rowMain, { opacity: pressed ? 0.6 : 1 }]}
+          onPress={() => router.push({ pathname: '/book/[id]', params: { id: item.userBookId, from: 'loans' } })}
+          style={({ pressed }) => [styles.rowTap, { opacity: pressed ? 0.6 : 1 }]}
         >
           <BookCover uri={book.localCoverUri ?? book.coverUrl} title={book.title} width={44} />
           <View style={{ flex: 1, gap: 2 }}>
-            <AppText variant="label" style={{ fontSize: 16 }}>
-              {loan.borrowerName}
-            </AppText>
-            <AppText muted numberOfLines={1}>
+            <AppText style={{ fontSize: 17, lineHeight: 22, fontWeight: '700' }}>{loan.borrowerName}</AppText>
+            <AppText muted numberOfLines={1} style={{ fontFamily: serif, fontSize: 15, lineHeight: 20 }}>
               {book.title}
             </AppText>
-            <AppText variant="small" color={due?.overdue ? c.accent : c.textFaint}>
-              {due ? `${formatDate(loan.dueAt)} · ${due.text}` : `${formatDate(loan.lentAt)} tarihinden beri`}
-            </AppText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Ionicons name={due?.overdue ? 'alert-circle-outline' : 'time-outline'} size={15} color={tone} />
+              <AppText
+                variant="small"
+                color={tone}
+                style={{ fontWeight: due?.overdue ? '700' : '400', flexShrink: 1 }}
+                numberOfLines={1}
+              >
+                {when}
+              </AppText>
+            </View>
           </View>
         </Pressable>
-        <Button
+        <PillButton
           title="Geri geldi"
-          kind="secondary"
-          compact
+          strong
           onPress={async () => {
             await returnLoan(loan.id);
-            toast(`“${book.title}” geri geldi`);
+            toast({
+              message: `İade kaydedildi · ${book.title}`,
+              actionLabel: 'Geri al',
+              onAction: () => void undoReturn(loan.id),
+            });
           }}
         />
       </View>
-      <Divider inset={space.lg + 44 + space.md} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg },
-  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
-  historyRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, minHeight: 48 },
+  row: { paddingLeft: space.lg },
+  rowMain: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingRight: space.lg, minHeight: 96 },
+  rowTap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
+  history: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: space.lg,
+    paddingTop: space.xl,
+    minHeight: 44,
+  },
 });
