@@ -546,6 +546,7 @@ const styles = StyleSheet.create({
   typeLink: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: space.sm },
   isbnInput: {
     flex: 1,
+    minWidth: 0,
     minHeight: 48,
     borderWidth: 1.6,
     borderRadius: radius.md,

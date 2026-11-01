@@ -241,7 +241,7 @@ export default function ReviewScreen() {
           headerTitleAlign: 'center',
           headerTitleStyle: { fontSize: 16, fontWeight: '600', color: c.text },
           headerLeft: () => <IconButton icon="close" label="Kapat" onPress={goBack} />,
-          headerRight: () => <LinkButton title="Tümünü seç" onPress={selectAll} />,
+          headerRight: () => <LinkButton title="Tümünü seç" onPress={selectAll} style={{ marginRight: 4 }} />,
         }}
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
@@ -249,7 +249,11 @@ export default function ReviewScreen() {
           <AppText variant="heading">{`${items.length} kitap bulundu`}</AppText>
           <AppText variant="secondary" muted>
             {`${groups.matched.length} eşleşti · `}
-            <AppText variant="secondary" color={c.warning} style={{ fontWeight: '600' }}>
+            <AppText
+              variant="secondary"
+              color={groups.verify.length ? c.warning : c.textMuted}
+              style={groups.verify.length ? { fontWeight: '600' } : undefined}
+            >
               {`${groups.verify.length} kontrol bekliyor`}
             </AppText>
             {` · ${groups.not_found.length} bulunamadı`}

@@ -29,6 +29,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
     ['loans', 'user_books'],
   );
 
+  // flex değerleri 390 pt genişlikteki tasarım ölçülerinden.
   const tab = (routeName: string, flex: number) => {
     const index = state.routes.findIndex((r) => r.name === routeName);
     const route = state.routes[index]!;
@@ -66,8 +67,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
         { backgroundColor: c.bg, borderTopColor: c.hairline, paddingBottom: Math.max(insets.bottom, 8) },
       ]}
     >
-      {tab('index', 2)}
-      <View style={[styles.tab, { width: 90, flex: 0 }]}>
+      {tab('index', 164)}
+      <View style={[styles.tab, { flex: 62 }]}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Tara: raf, barkod ya da elle ekle"
@@ -81,8 +82,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
         </Pressable>
         <Text style={[type.tab, styles.scanLabel, { color: c.primary }]}>Tara</Text>
       </View>
-      {tab('loans', 1)}
-      {tab('profile', 1)}
+      {tab('loans', 86)}
+      {tab('profile', 78)}
     </View>
   );
 }

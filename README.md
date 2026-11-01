@@ -138,7 +138,19 @@ Uygulama içinden hesap silme var (mağaza kuralı).
   `npx eas-cli build --profile preview` (Android APK) ya da `--profile production` çalıştırın.
 - Play Store'da kişisel hesaplar için 12 test kullanıcısıyla 14 günlük kapalı test şartı var (planın Faz 4'ü).
 
+## Tasarım
+
+Arayüz, "Kitaplık Ekran Spesifikasyonu" tasarımına göre yapıldı: renk ve yazı token'ları
+`mobile/src/theme/index.ts`, ortak bileşenler `mobile/src/components/ui.tsx`.
+
+## Alıntılar ve notlar
+
+Kitap sayfasından alıntı (sayfa numarasıyla) ya da not eklenir. Kitabın tüm kayıtları, Profil › Alıntılar ve notlar
+ve kütüphane aramasındaki "Alıntılarda" sonuçlarıyla erişilir. Kayıtlar yerelde tutulur ve hesapla senkronlanır.
+"Sayfayı tara" (fotoğraftan metin seçme) cihazda metin tanıma gerektirdiği için Expo Go'da yok; development build ile
+eklenecek.
+
 ## Kapsam dışı / sonraki sürüm
 
-v1.1: sayfadan alıntı (OCR) ve notlar, aylık istatistik kartları, CSV ve Goodreads içe/dışa aktarma.
+Sonraki sürüm: sayfadan metin tanıma (OCR), aylık istatistik kartları, CSV ve Goodreads içe/dışa aktarma, Premium.
 Bilinçli olarak dışarıda: YZ ile kitap özeti, sosyal akış, e-kitap okuyucu.
