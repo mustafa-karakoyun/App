@@ -12,8 +12,8 @@ afterAll(() => ctx.close());
 
 const t = (offsetSec = 0) => new Date(Date.now() + offsetSec * 1000).toISOString();
 
-function changes(partial: Partial<Record<'locations' | 'user_books' | 'loans', unknown[]>>) {
-  return { changes: { locations: [], user_books: [], loans: [], ...partial } };
+function changes(partial: Partial<Record<'locations' | 'user_books' | 'loans' | 'notes', unknown[]>>) {
+  return { changes: { locations: [], user_books: [], loans: [], notes: [], ...partial } };
 }
 
 describe('senkronizasyon', () => {
@@ -175,5 +175,56 @@ describe('senkronizasyon', () => {
       payload: changes({ user_books: [{ id: 'x' }] }),
     });
     expect(res.statusCode).toBe(400);
+  });
+
+  it('alıntı ve notları senkronlar, başka kullanıcıya göstermez', async () => {
+    const a = await registerUser(ctx.app, 'notlar@example.com');
+    const b = await registerUser(ctx.app, 'baskasi@example.com');
+    const ubId = randomUUID();
+    const quote = {
+      id: randomUUID(),
+      user_book_id: ubId,
+      kind: 'quote',
+      text: 'Dünyada en çok sevdiğim şey…',
+      page: 142,
+      created_at: t(),
+      updated_at: t(),
+      deleted_at: null,
+    };
+    const note = {
+      id: randomUUID(),
+      user_book_id: ubId,
+      kind: 'note',
+      text: 'Boğaz gezisi',
+      page: null,
+      created_at: t(),
+      updated_at: t(),
+      deleted_at: null,
+    };
+    const push = await ctx.app.inject({
+      method: 'POST',
+      url: '/sync/push',
+      headers: a.headers,
+      payload: changes({ notes: [quote, note] }),
+    });
+    expect(push.json().rejected).toEqual([]);
+
+    const pull = (await ctx.app.inject({ method: 'GET', url: '/sync/pull', headers: a.headers })).json();
+    expect(pull.changes.notes).toHaveLength(2);
+    expect(pull.changes.notes.find((n: { kind: string }) => n.kind === 'quote')).toMatchObject({
+      page: 142,
+      text: quote.text,
+    });
+
+    const other = (await ctx.app.inject({ method: 'GET', url: '/sync/pull', headers: b.headers })).json();
+    expect(other.changes.notes).toHaveLength(0);
+
+    const bad = await ctx.app.inject({
+      method: 'POST',
+      url: '/sync/push',
+      headers: a.headers,
+      payload: changes({ notes: [{ ...quote, kind: 'ozet' }] }),
+    });
+    expect(bad.statusCode).toBe(400);
   });
 });

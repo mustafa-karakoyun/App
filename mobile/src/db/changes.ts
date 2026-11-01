@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 // Tüm yazmalar veri katmanından geçtiği için ekranları yenilemenin en basit yolu:
 // her yazmada ilgili tabloyu duyur, o tabloyu okuyan sorgular yeniden çalışsın.
-export type TableName = 'books' | 'user_books' | 'locations' | 'loans' | 'pending_scans' | 'kv';
+export type TableName = 'books' | 'user_books' | 'locations' | 'loans' | 'notes' | 'pending_scans' | 'kv';
 
 type Listener = (tables: Set<TableName>) => void;
 const listeners = new Set<Listener>();

@@ -50,10 +50,23 @@ export interface Loan extends SyncedRecord {
   returned_at: string | null;
 }
 
+export const NOTE_KINDS = ['quote', 'note'] as const;
+export type NoteKind = (typeof NOTE_KINDS)[number];
+
+/** Kitaptan alıntı ya da kullanıcının kendi notu. Yalnızca sahibinde ve yedeğinde durur. */
+export interface Note extends SyncedRecord {
+  user_book_id: string;
+  kind: NoteKind;
+  text: string;
+  page: number | null;
+  created_at: string;
+}
+
 export interface SyncChanges {
   locations: Location[];
   user_books: UserBook[];
   loans: Loan[];
+  notes: Note[];
 }
 
 export interface SyncPushRequest {

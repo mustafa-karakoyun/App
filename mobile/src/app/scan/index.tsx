@@ -5,11 +5,12 @@ import { useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BarcodeMode } from '@/components/scan/BarcodeMode';
+import { CamButton } from '@/components/scan/chrome';
 import { ShelfMode } from '@/components/scan/ShelfMode';
-import { AppText, Button, IconButton, Segmented } from '@/components/ui';
+import { AppText, Button, Segmented } from '@/components/ui';
 import { getKv, setKv } from '@/data/kv';
-import { space } from '@/theme';
 import { goBack } from '@/lib/nav';
+import { cam, space } from '@/theme';
 
 type Mode = 'shelf' | 'barcode' | 'manual';
 
@@ -35,55 +36,53 @@ export default function ScanScreen() {
     setMode(m);
   };
 
-  const modeSwitcher = (
-    <View style={{ paddingHorizontal: space.xl, paddingBottom: insets.bottom + space.md }}>
-      <Segmented options={MODES} value={mode} onChange={changeMode} onDark />
-    </View>
-  );
-
-  const closeButton = (
-    <View style={[styles.close, { top: insets.top + space.sm }]}>
-      <IconButton icon="close" label="Kapat" color="#fff" size={28} onPress={() => goBack()} />
-    </View>
-  );
+  const modeSwitcher = <Segmented options={MODES} value={mode} onChange={changeMode} onDark style={styles.segment} />;
 
   if (!permission) return <View style={styles.dark} />;
 
   if (!permission.granted) {
     return (
-      <View style={[styles.dark, { paddingTop: insets.top }]}>
-        {closeButton}
+      <View style={[styles.dark, { paddingTop: insets.top, paddingBottom: insets.bottom + space.lg }]}>
+        <CamButton icon="close" label="Kapat" onPress={goBack} style={styles.close} />
         <View style={styles.permission}>
-          <Ionicons name="camera-outline" size={44} color="#F5F0E6" />
-          <AppText variant="title" color="#F5F0E6" style={{ textAlign: 'center' }}>
+          <Ionicons name="camera-outline" size={52} color={cam.text} />
+          <AppText variant="title" color={cam.text} style={{ textAlign: 'center', fontSize: 24 }}>
             Kamera izni gerekiyor
           </AppText>
-          <AppText color="#CFC6B6" style={{ textAlign: 'center' }}>
-            Raf fotoğrafı çekmek ve barkod okumak için kameraya erişmemiz gerekiyor. Fotoğraflar yalnızca kitapları
-            tanımak için işlenir, saklanmaz.
+          <AppText variant="sub" color={cam.muted} style={{ textAlign: 'center' }}>
+            Rafını ya da barkodu okumak için kameraya ihtiyacımız var. Fotoğraflar yalnızca kitapları tanımak için
+            işlenir, saklanmaz.
           </AppText>
-          {permission.canAskAgain ? (
-            <Button title="İzin ver" onPress={requestPermission} style={{ alignSelf: 'stretch' }} />
-          ) : (
-            <Button title="Ayarları aç" onPress={() => Linking.openSettings()} style={{ alignSelf: 'stretch' }} />
-          )}
-          <Button title="Elle ekle" kind="ghost" onPress={() => router.replace('/book/add')} />
+          <View style={styles.shield}>
+            <Ionicons name="shield-checkmark-outline" size={16} color={cam.success} />
+            <AppText variant="small" color={cam.success} style={{ fontWeight: '600' }}>
+              Fotoğraf cihazdan çıkınca hemen silinir
+            </AppText>
+          </View>
         </View>
-        {modeSwitcher}
+        <View style={{ paddingHorizontal: space.lg, gap: space.md }}>
+          {permission.canAskAgain ? (
+            <Button title="İzin ver" kind="onDarkPrimary" onPress={requestPermission} />
+          ) : (
+            <Button title="Ayarları aç" kind="onDarkPrimary" onPress={() => Linking.openSettings()} />
+          )}
+          <Button title="Elle ekle" kind="onDark" onPress={() => router.replace('/book/add')} />
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.dark}>
-      {mode === 'shelf' ? <ShelfMode footer={modeSwitcher} /> : <BarcodeMode footer={modeSwitcher} />}
-      {closeButton}
+      {mode === 'shelf' ? <ShelfMode modeSwitcher={modeSwitcher} /> : <BarcodeMode modeSwitcher={modeSwitcher} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  dark: { flex: 1, backgroundColor: '#0F0E0C' },
-  close: { position: 'absolute', left: space.sm, zIndex: 10 },
+  dark: { flex: 1, backgroundColor: cam.bg },
+  close: { marginLeft: 14, marginTop: space.sm },
+  segment: { width: 240, alignSelf: 'center' },
   permission: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: space.lg, paddingHorizontal: space.xl },
+  shield: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.sm },
 });

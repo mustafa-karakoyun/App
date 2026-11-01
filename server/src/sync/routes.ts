@@ -1,4 +1,10 @@
-import { ADDED_VIA, READING_STATUSES, type SyncPullResponse, type SyncPushResponse } from '@kitaplik/shared';
+import {
+  ADDED_VIA,
+  NOTE_KINDS,
+  READING_STATUSES,
+  type SyncPullResponse,
+  type SyncPushResponse,
+} from '@kitaplik/shared';
 import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 import { z } from 'zod';
@@ -41,6 +47,19 @@ const pushSchema = z.object({
       )
       .max(5000)
       .default([]),
+    notes: z
+      .array(
+        z.object({
+          ...synced,
+          user_book_id: z.uuid(),
+          kind: z.enum(NOTE_KINDS),
+          text: z.string().trim().min(1).max(4000),
+          page: z.number().int().min(0).max(100000).nullable(),
+          created_at: isoDate,
+        }),
+      )
+      .max(10000)
+      .default([]),
   }),
 });
 
@@ -50,7 +69,7 @@ const pushSchema = z.object({
  */
 async function upsert(
   client: pg.PoolClient,
-  table: 'locations' | 'user_books' | 'loans',
+  table: 'locations' | 'user_books' | 'loans' | 'notes',
   userId: string,
   columns: string[],
   rows: Record<string, unknown>[],
@@ -116,10 +135,17 @@ export async function syncRoutes(app: FastifyInstance, { db }: AppDeps) {
         ['user_book_id', 'borrower_name', 'lent_at', 'due_at', 'returned_at'],
         changes.loans,
       );
-      return new Set([...a, ...b, ...c]);
+      const d = await upsert(
+        client,
+        'notes',
+        userId,
+        ['user_book_id', 'kind', 'text', 'page', 'created_at'],
+        changes.notes,
+      );
+      return new Set([...a, ...b, ...c, ...d]);
     });
 
-    const all = [...changes.locations, ...changes.user_books, ...changes.loans];
+    const all = [...changes.locations, ...changes.user_books, ...changes.loans, ...changes.notes];
     const response: SyncPushResponse = { rejected: all.filter((r) => !accepted.has(r.id)).map((r) => r.id) };
     return response;
   });
@@ -133,7 +159,7 @@ export async function syncRoutes(app: FastifyInstance, { db }: AppDeps) {
     // pull'da kaçmasın. Aynı kaydın iki kez gelmesi istemcide zararsız.
     const { rows: timeRows } = await db.query<{ t: string }>("SELECT clock_timestamp() - interval '30 seconds' AS t");
 
-    const [locations, userBooks, loans] = await Promise.all([
+    const [locations, userBooks, loans, notes] = await Promise.all([
       db.query(
         `SELECT id, name, parent_id, updated_at, deleted_at FROM locations
          WHERE user_id = $1 AND server_updated_at > $2`,
@@ -149,11 +175,16 @@ export async function syncRoutes(app: FastifyInstance, { db }: AppDeps) {
          WHERE user_id = $1 AND server_updated_at > $2`,
         [userId, after],
       ),
+      db.query(
+        `SELECT id, user_book_id, kind, text, page, created_at, updated_at, deleted_at FROM notes
+         WHERE user_id = $1 AND server_updated_at > $2`,
+        [userId, after],
+      ),
     ]);
     const books = await getBooks(db, [...new Set(userBooks.rows.map((r) => r.book_id as string))]);
 
     return {
-      changes: { locations: locations.rows, user_books: userBooks.rows, loans: loans.rows },
+      changes: { locations: locations.rows, user_books: userBooks.rows, loans: loans.rows, notes: notes.rows },
       books,
       server_time: timeRows[0]!.t,
     };

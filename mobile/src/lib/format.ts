@@ -72,3 +72,77 @@ function safeParse(json: string): string[] {
 export function plural(n: number, word: string) {
   return `${n} ${word}`;
 }
+
+// Türkçe ek uyumu: "Ayşe'de / Mert'te", "Ayşe'ye / Mert'e", "6 Kasım'a / 3 Eylül'e".
+const BACK_VOWELS = 'aıou';
+const VOWELS = 'aeıioöuü';
+const HARD = 'fstkçşhp';
+
+function lastVowel(word: string): string {
+  const w = word.toLocaleLowerCase('tr-TR');
+  for (let i = w.length - 1; i >= 0; i--) if (VOWELS.includes(w[i]!)) return w[i]!;
+  return 'e';
+}
+
+/** Bulunma eki: "Ayşe'de", "Mert'te", "Kasım'da". */
+export function locative(word: string): string {
+  const last = word.toLocaleLowerCase('tr-TR').slice(-1);
+  const d = HARD.includes(last) ? 't' : 'd';
+  const v = BACK_VOWELS.includes(lastVowel(word)) ? 'a' : 'e';
+  return `${word}’${d}${v}`;
+}
+
+/** Yönelme eki: "Ayşe'ye", "Mert'e", "Kasım'a". */
+export function dative(word: string): string {
+  const last = word.toLocaleLowerCase('tr-TR').slice(-1);
+  const v = BACK_VOWELS.includes(lastVowel(word)) ? 'a' : 'e';
+  return `${word}’${VOWELS.includes(last) ? 'y' : ''}${v}`;
+}
+
+/** "6 Kasım’a kadar" */
+export function untilText(iso: string): string {
+  return `${dative(formatDate(iso))} kadar`;
+}
+
+/** "29 Ekim’di" (geçmiş tarih). */
+export function wasText(iso: string): string {
+  const date = formatDate(iso);
+  const last = date.toLocaleLowerCase('tr-TR').slice(-1);
+  const d = HARD.includes(last) ? 't' : 'd';
+  const v = lastVowel(date);
+  const harmony = 'aı'.includes(v) ? 'ı' : 'ou'.includes(v) ? 'u' : 'eiE'.includes(v) ? 'i' : 'ü';
+  return `${date}’${d}${harmony}`;
+}
+
+export function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]!.toLocaleUpperCase('tr-TR'))
+    .join('');
+}
+
+const MONTHS_SHORT = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+/** "12 Eki" (bu yıl) ya da "12 Eki 2024". */
+export function formatShort(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const base = `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+  return d.getFullYear() !== new Date().getFullYear() ? `${base} ${d.getFullYear()}` : base;
+}
+
+/** "EKİM 2026" bölüm başlıkları için ay adı. */
+export function monthYear(iso: string): string {
+  const d = new Date(iso);
+  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** ISBN'i okunur gruplara ayırır: 978 975 07 0123 4. */
+export function formatIsbn(isbn: string | null | undefined): string {
+  if (!isbn) return '';
+  return isbn.length === 13
+    ? `${isbn.slice(0, 3)} ${isbn.slice(3, 6)} ${isbn.slice(6, 8)} ${isbn.slice(8, 12)} ${isbn.slice(12)}`
+    : isbn;
+}

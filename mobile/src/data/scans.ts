@@ -78,6 +78,39 @@ export function removePendingScan(id: string) {
   notifyChange('pending_scans');
 }
 
+/**
+ * Raf fotoğrafını işler ve sonucu onay listesi için kaydeder. Kullanıcı ekranı
+ * kapatsa da sürer; `detached()` doğruysa bitince bildirim gönderir.
+ * İnternet yoksa fotoğraf kuyruğa alınır ve `queued` döner.
+ */
+export async function runShelfScan(
+  uri: string,
+  detached: () => boolean,
+): Promise<{ kind: 'done'; pendingId: string; count: number } | { kind: 'queued' }> {
+  try {
+    const result = await uploadShelf(uri);
+    const id = newId();
+    db.insert(pendingScans)
+      .values({ id, photoUri: uri, status: 'done', result: JSON.stringify(result), error: null, createdAt: now() })
+      .run();
+    notifyChange('pending_scans');
+    if (detached()) {
+      await notifyNow(
+        'Raf taraması hazır',
+        `${result.items.length} kitap bulundu. Onaylamak için dokun.`,
+        `/scan/review?pending=${id}`,
+      );
+    }
+    return { kind: 'done', pendingId: id, count: result.items.length };
+  } catch (err) {
+    if (isOffline(err) || (err instanceof ApiError && err.status >= 500)) {
+      queueShelfPhoto(uri);
+      return { kind: 'queued' };
+    }
+    throw err;
+  }
+}
+
 /** Kuyruktaki raf fotoğraflarını işler; biten her tarama için bildirim gönderir. */
 export async function processScanQueue() {
   if (!currentUser()) return;
@@ -118,7 +151,7 @@ export interface ShelfSelection {
 
 /** Onay listesindeki seçimleri kütüphaneye ekler; zaten var olanları tekrar eklemez. */
 export function addShelfSelections(selections: ShelfSelection[], locationId: string | null) {
-  let added = 0;
+  const addedIds: string[] = [];
   let existed = 0;
   for (const { item, candidateIndex } of selections) {
     if (candidateIndex === null) continue;
@@ -126,9 +159,9 @@ export function addShelfSelections(selections: ShelfSelection[], locationId: str
     if (!candidate) continue;
     const res = addCatalogBook(candidate.book, { addedVia: 'shelf', locationId });
     if (res.existed) existed++;
-    else added++;
+    else addedIds.push(res.userBook.id);
   }
-  return { added, existed };
+  return { added: addedIds.length, existed, addedIds };
 }
 
 /** Kullanıcının son seçimlerini sunucuya bildirir (öğrenme döngüsü). Hata uygulamayı durdurmaz. */

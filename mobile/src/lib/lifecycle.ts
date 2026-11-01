@@ -36,7 +36,7 @@ export function useAppLifecycle() {
       wasConnected = connected;
     });
     const unsubscribe = subscribe((tables) => {
-      if (!tables.has('user_books') && !tables.has('locations') && !tables.has('loans')) return;
+      if (!tables.has('user_books') && !tables.has('locations') && !tables.has('loans') && !tables.has('notes')) return;
       // Pull da değişiklik duyurur; senkronizasyonun kendi yazmaları ve gönderilemeyecek
       // kayıtlar (kitabı henüz sunucuda olmayanlar) yeni tur başlatmasın.
       if (isSyncRunning()) return;

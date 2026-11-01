@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { IconName } from '@/components/ui';
 import { useDbQuery } from '@/db/changes';
 import { activeLoans } from '@/data/loans';
-import { radius, space, type, useTheme } from '@/theme';
+import { type, useTheme } from '@/theme';
 
 const TABS: Record<string, { label: string; icon: IconName; iconActive: IconName }> = {
   index: { label: 'Kütüphane', icon: 'library-outline', iconActive: 'library' },
@@ -14,7 +14,12 @@ const TABS: Record<string, { label: string; icon: IconName; iconActive: IconName
   profile: { label: 'Profil', icon: 'person-outline', iconActive: 'person' },
 };
 
-/** Alt menü: ikinci sırada büyük "Tara" düğmesi, uygulamanın ana eylemi. */
+const SCAN_SIZE = 62;
+
+/**
+ * Alt menü: Kütüphane | ● Tara ● | Ödünçte | Profil. Tara ekranın tam ortasında,
+ * menüden yukarı taşan yeşil daire; başparmakla kolay ulaşılır.
+ */
 function TabBar({ state, navigation }: BottomTabBarProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -24,7 +29,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
     ['loans', 'user_books'],
   );
 
-  const tab = (routeName: string) => {
+  const tab = (routeName: string, flex: number) => {
     const index = state.routes.findIndex((r) => r.name === routeName);
     const route = state.routes[index]!;
     const focused = state.index === index;
@@ -34,12 +39,12 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
         key={routeName}
         accessibilityRole="tab"
         accessibilityState={{ selected: focused }}
-        accessibilityLabel={meta.label}
+        accessibilityLabel={routeName === 'loans' && overdue > 0 ? `${meta.label}, iadesi geciken var` : meta.label}
         onPress={() => {
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
           if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
         }}
-        style={styles.tab}
+        style={[styles.tab, { flex }]}
       >
         <View>
           <Ionicons name={focused ? meta.iconActive : meta.icon} size={24} color={focused ? c.primary : c.textMuted} />
@@ -47,7 +52,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             <View style={[styles.dot, { backgroundColor: c.accent, borderColor: c.bg }]} />
           ) : null}
         </View>
-        <Text style={[type.small, { color: focused ? c.primary : c.textMuted, fontWeight: focused ? '600' : '400' }]}>
+        <Text style={[type.tab, { color: focused ? c.primary : c.textMuted, fontWeight: focused ? '600' : '500' }]}>
           {meta.label}
         </Text>
       </Pressable>
@@ -58,23 +63,26 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
     <View
       style={[
         styles.bar,
-        { backgroundColor: c.bg, borderTopColor: c.hairline, paddingBottom: Math.max(insets.bottom, space.sm) },
+        { backgroundColor: c.bg, borderTopColor: c.hairline, paddingBottom: Math.max(insets.bottom, 8) },
       ]}
     >
-      {tab('index')}
-      <View style={styles.tab}>
+      {tab('index', 2)}
+      <View style={[styles.tab, { width: 90, flex: 0 }]}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Tara: raf, barkod ya da elle ekle"
           onPress={() => router.push('/scan')}
-          style={({ pressed }) => [styles.scan, { backgroundColor: c.primary, opacity: pressed ? 0.85 : 1 }]}
+          style={({ pressed }) => [
+            styles.scan,
+            { backgroundColor: c.primary, borderColor: c.bg, transform: [{ scale: pressed ? 0.95 : 1 }] },
+          ]}
         >
-          <Ionicons name="scan" size={22} color={c.primaryText} />
-          <Text style={[type.label, { color: c.primaryText }]}>Tara</Text>
+          <Ionicons name="scan" size={28} color={c.primaryText} />
         </Pressable>
+        <Text style={[type.tab, styles.scanLabel, { color: c.primary }]}>Tara</Text>
       </View>
-      {tab('loans')}
-      {tab('profile')}
+      {tab('loans', 1)}
+      {tab('profile', 1)}
     </View>
   );
 }
@@ -90,15 +98,18 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.sm },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 48 },
+  bar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10, minHeight: 76 },
+  tab: { alignItems: 'center', justifyContent: 'flex-start', gap: 3, minHeight: 48 },
   scan: {
-    flexDirection: 'row',
+    position: 'absolute',
+    top: -36,
+    width: SCAN_SIZE + 10,
+    height: SCAN_SIZE + 10,
+    borderRadius: (SCAN_SIZE + 10) / 2,
+    borderWidth: 5,
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: space.lg,
-    height: 44,
-    borderRadius: radius.pill,
+    justifyContent: 'center',
   },
+  scanLabel: { marginTop: 27, fontWeight: '700' },
   dot: { position: 'absolute', top: -2, right: -4, width: 10, height: 10, borderRadius: 5, borderWidth: 2 },
 });

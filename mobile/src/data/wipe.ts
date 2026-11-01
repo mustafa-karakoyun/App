@@ -1,6 +1,6 @@
 import { db } from '@/db/client';
 import { notifyChange } from '@/db/changes';
-import { books, loans, locations, outbox, pendingScans, userBooks } from '@/db/schema';
+import { books, loans, locations, notes, outbox, pendingScans, userBooks } from '@/db/schema';
 import { cancelReminder } from '@/lib/notifications';
 import { setKv } from './kv';
 
@@ -11,6 +11,7 @@ export async function wipeLocalData() {
   db.$client.withTransactionSync(() => {
     db.delete(outbox).run();
     db.delete(loans).run();
+    db.delete(notes).run();
     db.delete(userBooks).run();
     db.delete(locations).run();
     db.delete(books).run();
@@ -18,5 +19,5 @@ export async function wipeLocalData() {
   });
   setKv('sync.last_pull', null);
   setKv('sync.last_success', null);
-  notifyChange('books', 'user_books', 'locations', 'loans', 'pending_scans');
+  notifyChange('books', 'user_books', 'locations', 'loans', 'notes', 'pending_scans');
 }

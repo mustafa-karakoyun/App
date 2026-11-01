@@ -9,12 +9,16 @@ export function Sheet({
   visible,
   onClose,
   title,
+  subtitle,
   children,
   footer,
+  closeButton = true,
 }: {
   visible: boolean;
   onClose: () => void;
   title: string;
+  subtitle?: string | null;
+  closeButton?: boolean;
   children: ReactNode;
   footer?: ReactNode;
 }) {
@@ -32,10 +36,15 @@ export function Sheet({
         <View style={[styles.sheet, { backgroundColor: c.bg, paddingBottom: insets.bottom + space.md }]}>
           <View style={[styles.grabber, { backgroundColor: c.hairline }]} />
           <View style={styles.header}>
-            <AppText variant="title" style={{ flex: 1 }}>
-              {title}
-            </AppText>
-            <IconButton icon="close" label="Kapat" onPress={onClose} />
+            <View style={{ flex: 1, paddingTop: space.sm }}>
+              <AppText variant="title">{title}</AppText>
+              {subtitle ? (
+                <AppText variant="small" muted numberOfLines={1}>
+                  {subtitle}
+                </AppText>
+              ) : null}
+            </View>
+            {closeButton ? <IconButton icon="close" label="Kapat" onPress={onClose} color={c.textMuted} /> : null}
           </View>
           <ScrollView keyboardShouldPersistTaps="handled" style={{ flexGrow: 0 }}>
             {children}
@@ -57,12 +66,12 @@ const styles = StyleSheet.create({
     maxWidth: 640,
     alignSelf: 'center',
   },
-  grabber: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: space.sm },
+  grabber: { width: 40, height: 5, borderRadius: 2.5, alignSelf: 'center', marginTop: space.sm },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingLeft: space.lg,
     paddingRight: space.sm,
-    paddingVertical: space.xs,
+    paddingBottom: space.md,
   },
 });

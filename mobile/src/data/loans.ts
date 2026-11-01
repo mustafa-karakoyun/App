@@ -99,6 +99,14 @@ export async function returnLoan(loanId: string) {
   notifyChange('loans');
 }
 
+/** "Geri al": yanlışlıkla iade edilen ödüncü yeniden açar, hatırlatmayı yeniden kurar. */
+export async function undoReturn(loanId: string) {
+  db.update(loans).set({ returnedAt: null, updatedAt: now() }).where(eq(loans.id, loanId)).run();
+  enqueue('loans', loanId);
+  notifyChange('loans');
+  await ensureReminders();
+}
+
 /**
  * Hatırlatmaları kayıtlarla eşitler: başka cihazdan gelen açık ödünçlere hatırlatma
  * kurar, başka cihazda iade edilen ya da silinenlerin hatırlatmasını iptal eder.

@@ -75,10 +75,26 @@ export const loans = sqliteTable(
   (t) => [index('loans_user_book').on(t.userBookId)],
 );
 
+/** Kitaptan alıntılar ve kullanıcının notları. */
+export const notes = sqliteTable(
+  'notes',
+  {
+    id: text('id').primaryKey(),
+    userBookId: text('user_book_id').notNull(),
+    kind: text('kind', { enum: ['quote', 'note'] }).notNull(),
+    text: text('text').notNull(),
+    page: integer('page'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+    deletedAt: text('deleted_at'),
+  },
+  (t) => [index('notes_user_book').on(t.userBookId)],
+);
+
 /** Sunucuya gönderilecek yerel değişiklikler ("giden kutusu"). */
 export const outbox = sqliteTable('outbox', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  tableName: text('table_name', { enum: ['locations', 'user_books', 'loans'] }).notNull(),
+  tableName: text('table_name', { enum: ['locations', 'user_books', 'loans', 'notes'] }).notNull(),
   recordId: text('record_id').notNull(),
   createdAt: text('created_at').notNull(),
 });
@@ -104,3 +120,4 @@ export type LocationRow = typeof locations.$inferSelect;
 export type UserBookRow = typeof userBooks.$inferSelect;
 export type LoanRow = typeof loans.$inferSelect;
 export type PendingScanRow = typeof pendingScans.$inferSelect;
+export type NoteRow = typeof notes.$inferSelect;

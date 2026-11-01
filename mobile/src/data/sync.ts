@@ -1,9 +1,18 @@
-import type { Book, Loan, Location, SyncChanges, SyncPullResponse, SyncPushResponse, UserBook } from '@kitaplik/shared';
+import type {
+  Book,
+  Loan,
+  Location,
+  Note,
+  SyncChanges,
+  SyncPullResponse,
+  SyncPushResponse,
+  UserBook,
+} from '@kitaplik/shared';
 import { eq, inArray, lte } from 'drizzle-orm';
 import { useSyncExternalStore } from 'react';
 import { db } from '@/db/client';
 import { notifyChange } from '@/db/changes';
-import { loans, locations, outbox, userBooks } from '@/db/schema';
+import { loans, locations, notes, outbox, userBooks } from '@/db/schema';
 import { api, ApiError, fileFormData, isOffline } from '@/lib/api';
 import { currentUser } from '@/lib/auth';
 import { getKv, setKv } from './kv';
@@ -127,6 +136,13 @@ async function push() {
   const maxId = Math.max(...queued.map((q) => q.id));
   const idsFor = (table: string) => [...new Set(queued.filter((q) => q.tableName === table).map((q) => q.recordId))];
 
+  const noteRows = idsFor('notes').length
+    ? db
+        .select()
+        .from(notes)
+        .where(inArray(notes.id, idsFor('notes')))
+        .all()
+    : [];
   const pendingBookIds = new Set(pendingBooks().map((b) => b.id));
   const locRows = idsFor('locations').length
     ? db
@@ -179,6 +195,16 @@ async function push() {
       lent_at: r.lentAt,
       due_at: r.dueAt,
       returned_at: r.returnedAt,
+      updated_at: r.updatedAt,
+      deleted_at: r.deletedAt,
+    })),
+    notes: noteRows.map((r): Note => ({
+      id: r.id,
+      user_book_id: r.userBookId,
+      kind: r.kind,
+      text: r.text,
+      page: r.page,
+      created_at: r.createdAt,
       updated_at: r.updatedAt,
       deleted_at: r.deletedAt,
     })),
@@ -250,10 +276,25 @@ async function pull() {
       };
       db.insert(loans).values(row).onConflictDoUpdate({ target: loans.id, set: row }).run();
     }
+    for (const r of res.changes.notes ?? []) {
+      const local = db.select({ u: notes.updatedAt }).from(notes).where(eq(notes.id, r.id)).get();
+      if (!shouldApply(local?.u, r.updated_at, pendingIds.has(r.id))) continue;
+      const row = {
+        id: r.id,
+        userBookId: r.user_book_id,
+        kind: r.kind,
+        text: r.text,
+        page: r.page,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        deletedAt: r.deleted_at,
+      };
+      db.insert(notes).values(row).onConflictDoUpdate({ target: notes.id, set: row }).run();
+    }
   });
 
   setKv('sync.last_pull', res.server_time);
-  notifyChange('locations', 'user_books', 'loans', 'books');
+  notifyChange('locations', 'user_books', 'loans', 'notes', 'books');
 }
 
 let running: Promise<void> | null = null;

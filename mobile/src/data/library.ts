@@ -12,6 +12,8 @@ import { db } from '@/db/client';
 import { notifyChange } from '@/db/changes';
 import { books, loans, userBooks, type BookRow, type LoanRow, type UserBookRow } from '@/db/schema';
 import { cancelReminder } from '@/lib/notifications';
+import { getKv, setKv } from './kv';
+import { deleteNotesForBook, userBooksWithQuotes } from './notes';
 import { descendantIds, locationPaths } from './locations';
 import { enqueue, newId, now } from './util';
 
@@ -31,6 +33,8 @@ export interface LibraryFilter {
   locationId?: string | null;
   /** Yalnızca konumu atanmamış kitaplar. */
   unplaced?: boolean;
+  /** Yalnızca alıntısı olan kitaplar. */
+  withQuotes?: boolean;
   sort?: SortKey;
 }
 
@@ -67,10 +71,12 @@ export function listLibrary(filter: LibraryFilter = {}): LibraryItem[] {
   const tokens = normalizeText(filter.search).split(' ').filter(Boolean);
   const isbnQuery = (filter.search ?? '').replace(/[^0-9X]/gi, '');
   const locationIds = filter.locationId ? descendantIds(filter.locationId) : null;
+  const quoted = filter.withQuotes ? userBooksWithQuotes() : null;
 
   const items: LibraryItem[] = [];
   for (const { userBook, book } of rows) {
     if (filter.status && userBook.status !== filter.status) continue;
+    if (quoted && !quoted.has(userBook.id)) continue;
     if (locationIds && !(userBook.locationId && locationIds.has(userBook.locationId))) continue;
     if (filter.unplaced && userBook.locationId && paths.has(userBook.locationId)) continue;
     if (tokens.length) {
@@ -340,6 +346,7 @@ export async function removeFromLibrary(id: string) {
     db.update(loans).set({ deletedAt: t, updatedAt: t, notificationId: null }).where(eq(loans.id, loan.id)).run();
     enqueue('loans', loan.id);
   }
+  deleteNotesForBook(id);
   notifyChange('user_books', 'loans');
 }
 
@@ -369,4 +376,29 @@ export function statusCounts(): Record<ReadingStatus | 'all', number> {
   const counts = { all: rows.length, to_read: 0, reading: 0, read: 0, abandoned: 0 };
   for (const r of rows) counts[r.status]++;
   return counts;
+}
+
+const RECENT_KEY = 'library.recent';
+const RECENT_TTL_MS = 30 * 60 * 1000;
+
+/** Toplu eklemenin ardından kütüphanede "Az önce eklendi" bölümü için. */
+export function setRecentAdd(ids: string[], label: string | null) {
+  setKv(RECENT_KEY, ids.length ? JSON.stringify({ ids, label, at: Date.now() }) : null);
+}
+
+export function recentAdd(): { ids: string[]; label: string | null } | null {
+  const raw = getKv(RECENT_KEY);
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw) as { ids: string[]; label: string | null; at: number };
+    return Date.now() - v.at < RECENT_TTL_MS ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** "Geri al": az önce eklenen kitapları kütüphaneden kaldırır. */
+export async function undoAdd(ids: string[]) {
+  for (const id of ids) await removeFromLibrary(id);
+  setRecentAdd([], null);
 }
