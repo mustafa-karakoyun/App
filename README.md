@@ -6,12 +6,12 @@ Proje planındaki MVP kapsamı bu depoda: mobil uygulama (Expo / React Native) v
 ```
 shared/   İstemci ve sunucunun ortak kodu: Türkçe normalleştirme, ISBN, bulanık eşleştirme, API tipleri
 server/   Fastify API: hesap, katalog, raf tarama, senkronizasyon (PostgreSQL + pg_trgm)
-mobile/   Expo SDK 57 uygulaması: yerel SQLite, kamera, barkod, bildirimler
+mobile/   Expo SDK 58 uygulaması: yerel SQLite, kamera, barkod, bildirimler
 ```
 
 ## Hızlı başlangıç
 
-Gerekenler: Node.js 22, PostgreSQL 16 (ya da Docker), telefonda **Expo Go** (SDK 57 sürümü).
+Gerekenler: Node.js 22, PostgreSQL 16 (ya da Docker), telefonda **Expo Go** (SDK 58 sürümü).
 
 ### 1. Veri tabanı
 
@@ -55,7 +55,7 @@ ilk denemeler için ayrı derleme gerekmez.
 ```
 VISION_PROVIDER=gemini
 GEMINI_API_KEY=AIza...
-GEMINI_VISION_MODEL=gemini-2.5-flash
+GEMINI_VISION_MODEL=gemini-3.5-flash-lite
 
 # ya da
 VISION_PROVIDER=openai

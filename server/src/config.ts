@@ -11,7 +11,7 @@ const schema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_VISION_MODEL: z.string().default('gpt-4.1'),
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_VISION_MODEL: z.string().default('gemini-2.5-flash'),
+  GEMINI_VISION_MODEL: z.string().default('gemini-3.5-flash-lite'),
   SCAN_MONTHLY_LIMIT: z.coerce.number().int().positive().default(20),
   GOOGLE_BOOKS_API_KEY: z.string().optional(),
   GOOGLE_CLIENT_IDS: z.string().optional(),

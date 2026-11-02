@@ -19,6 +19,8 @@ export function configureNotifications() {
   if (Platform.OS === 'android') {
     Notifications.setNotificationChannelAsync(CHANNEL, {
       name: 'Hatırlatmalar',
+      // SDK 58'de enum derlenmiş IIFE olarak dışa aktarılıyor; eslint-plugin-import onu göremiyor.
+      // eslint-disable-next-line import/namespace
       importance: Notifications.AndroidImportance.DEFAULT,
     }).catch(() => {});
   }

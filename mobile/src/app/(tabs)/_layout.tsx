@@ -20,7 +20,7 @@ const SCAN_SIZE = 62;
  * Alt menü: Kütüphane | ● Tara ● | Ödünçte | Profil. Tara ekranın tam ortasında,
  * menüden yukarı taşan yeşil daire; başparmakla kolay ulaşılır.
  */
-function TabBar({ state, navigation }: BottomTabBarProps) {
+function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const overdue = useDbQuery(
@@ -42,8 +42,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
         accessibilityState={{ selected: focused }}
         accessibilityLabel={routeName === 'loans' && overdue > 0 ? `${meta.label}, iadesi geciken var` : meta.label}
         onPress={() => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-          if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+          const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!focused && !event.defaultPrevented) navigateToTab(route.key);
         }}
         style={[styles.tab, { flex }]}
       >
