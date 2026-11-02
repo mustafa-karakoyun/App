@@ -53,7 +53,7 @@ Tasarımın etrafında döndüğü dört senaryo:
 - **Görsel model:** OpenAI. Anahtar girilene kadar sahte (mock) yanıt.
 - **Giriş:** Önce e-posta/şifre; Google ile giriş kodu hazır ama kapalı.
 - **Tasarım:** Yoğun kart yok, gözü yormayan, kağıt tonları + koyu yeşil/bordo vurgu, UX ön planda.
-- **Expo SDK:** 57.
+- **Expo SDK:** 58 (başlangıçta 57 kurulmuştu, 58'e yükseltildi).
 - **Notlar ve alıntılar:** Planda v1.1'di; tasarımda olduğu için şimdi yapıldı.
 - **"Sayfayı tara" (OCR):** Şimdilik yok; Expo Go'da çalışmadığı için "yakında" olarak duruyor.
 - **Push:** Kullanıcı GitHub erişimini sonradan verdi; şu an her şey push'lu.
@@ -214,7 +214,7 @@ Vitest, gerçek PostgreSQL test veri tabanıyla (`kitaplik_test`); dış API'ler
 ## 7. Mobil uygulama (`mobile/`)
 
 **Yığın:**
-- Expo SDK 57, React Native 0.86, expo-router.
+- Expo SDK 58, React Native 0.88, expo-router.
 - Yerel veri: expo-sqlite + Drizzle ORM.
 - Donanım ve sistem: expo-camera (barkod dahil), expo-notifications (yerel), expo-image, expo-image-manipulator, expo-secure-store.
 - Sunucu çağrıları: TanStack Query (yalnızca kota sorgusu).
@@ -343,7 +343,7 @@ Kullanılan bütün yerel modüller Expo Go'da hazır gelir; geliştirme için a
 
 ## 11. Sıradaki işler
 
-1. **Telefonda deneme:** Expo Go (SDK 57) ile; README'deki "Hızlı başlangıç".
+1. **Telefonda deneme:** Expo Go (SDK 58) ile; README'deki "Hızlı başlangıç".
 2. **Faz 0:** Gerçek raf fotoğrafları ve 50 Türkçe ISBN ile ölçüm. Sonra `MATCH_THRESHOLDS` ve tarama kotası güncellenir.
 3. **OpenAI anahtarı:** `server/.env` → `VISION_PROVIDER=openai`.
 4. **Sunucuyu yayına alma:** `docker compose up -d`. Ardından `mobile/eas.json` içindeki adres güncellenip EAS ile derleme yapılır.

@@ -101,6 +101,82 @@ export class OpenAIVisionProvider implements VisionProvider {
   }
 }
 
+// Gemini responseSchema: OpenAPI alt kümesi; null'a izin için `nullable`.
+const GEMINI_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  required: ['books', 'unreadable_count'],
+  properties: {
+    books: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        required: ['position', 'raw_text', 'title', 'author', 'publisher', 'confidence'],
+        properties: {
+          position: { type: 'INTEGER' },
+          raw_text: { type: 'STRING' },
+          title: { type: 'STRING', nullable: true },
+          author: { type: 'STRING', nullable: true },
+          publisher: { type: 'STRING', nullable: true },
+          confidence: { type: 'NUMBER' },
+        },
+      },
+    },
+    unreadable_count: { type: 'INTEGER' },
+  },
+} as const;
+
+export class GeminiVisionProvider implements VisionProvider {
+  readonly name = 'gemini';
+  lastUsage: VisionUsage | null = null;
+
+  constructor(
+    private readonly apiKey: string,
+    private readonly model: string,
+    private readonly fetchFn: typeof fetch = fetch,
+  ) {}
+
+  async readShelf(image: Buffer, mimeType: string): Promise<ShelfOutput> {
+    const res = await this.fetchFn(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': this.apiKey },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: SHELF_PROMPT },
+                { inline_data: { mime_type: mimeType, data: image.toString('base64') } },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: GEMINI_RESPONSE_SCHEMA,
+            temperature: 0,
+          },
+        }),
+        signal: AbortSignal.timeout(120_000),
+      },
+    );
+    if (!res.ok) throw new Error(`Gemini isteği başarısız (${res.status}): ${(await res.text()).slice(0, 300)}`);
+    const data = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+    };
+    this.lastUsage = data.usageMetadata
+      ? {
+          input_tokens: data.usageMetadata.promptTokenCount ?? 0,
+          output_tokens: data.usageMetadata.candidatesTokenCount ?? 0,
+        }
+      : null;
+    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('');
+    if (!text) throw new Error('Gemini boş yanıt döndürdü');
+    return shelfOutputSchema.parse(JSON.parse(text));
+  }
+}
+
 /**
  * API anahtarı yokken uçtan uca akışı denemek için sabit yanıt. Gerçek bir
  * rafı taklit eder: birkaç net eşleşme, bir belirsiz, bir bulunamayan.

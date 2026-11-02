@@ -17,7 +17,7 @@ import { matchScore } from '@kitaplik/shared';
 import 'dotenv/config';
 import { loadConfig } from '../src/config';
 import { readShelf } from '../src/scan/pipeline';
-import { MockVisionProvider, OpenAIVisionProvider, type VisionProvider } from '../src/scan/vision';
+import { GeminiVisionProvider, MockVisionProvider, OpenAIVisionProvider, type VisionProvider } from '../src/scan/vision';
 
 const dir = process.argv[2];
 if (!dir) {
@@ -29,7 +29,9 @@ const config = loadConfig({ ...process.env, JWT_SECRET: process.env.JWT_SECRET |
 const vision: VisionProvider =
   config.VISION_PROVIDER === 'openai'
     ? new OpenAIVisionProvider(config.OPENAI_API_KEY!, config.OPENAI_VISION_MODEL)
-    : new MockVisionProvider();
+    : config.VISION_PROVIDER === 'gemini'
+      ? new GeminiVisionProvider(config.GEMINI_API_KEY!, config.GEMINI_VISION_MODEL)
+      : new MockVisionProvider();
 if (vision.name === 'mock') console.warn('Uyarı: VISION_PROVIDER=mock; sonuçlar anlamsız olur.');
 
 type Truth = { title: string; author?: string };

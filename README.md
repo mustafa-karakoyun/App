@@ -6,12 +6,12 @@ Proje planındaki MVP kapsamı bu depoda: mobil uygulama (Expo / React Native) v
 ```
 shared/   İstemci ve sunucunun ortak kodu: Türkçe normalleştirme, ISBN, bulanık eşleştirme, API tipleri
 server/   Fastify API: hesap, katalog, raf tarama, senkronizasyon (PostgreSQL + pg_trgm)
-mobile/   Expo SDK 57 uygulaması: yerel SQLite, kamera, barkod, bildirimler
+mobile/   Expo SDK 58 uygulaması: yerel SQLite, kamera, barkod, bildirimler
 ```
 
 ## Hızlı başlangıç
 
-Gerekenler: Node.js 22, PostgreSQL 16 (ya da Docker), telefonda **Expo Go** (SDK 57 sürümü).
+Gerekenler: Node.js 22, PostgreSQL 16 (ya da Docker), telefonda **Expo Go** (SDK 58 sürümü).
 
 ### 1. Veri tabanı
 

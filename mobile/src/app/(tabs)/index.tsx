@@ -255,7 +255,7 @@ export default function LibraryScreen() {
         </>
       }
     />
-  ) : null;
+  ) : undefined;
 
   // Toplu eklemenin hemen ardından eklenenler ayrı bölümde, en üstte.
   const recentIds = !filtered && recent ? new Set(recent.ids) : null;
@@ -431,7 +431,7 @@ function MetaLine({ item }: { item: LibraryItem }) {
       <AppText variant="small" color={c.primary} style={{ fontWeight: '600' }}>
         {`  ·  ${STATUS_CHIP[userBook.status]}`}
       </AppText>
-    ) : null;
+    ) : undefined;
   if (activeLoan) {
     const due = activeLoan.dueAt ? dueText(activeLoan.dueAt) : null;
     const tone = due?.overdue ? c.accent : c.warning;

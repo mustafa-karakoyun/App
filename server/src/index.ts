@@ -3,7 +3,7 @@ import { createProviders } from './books/providers';
 import { loadConfig } from './config';
 import { createDb } from './db';
 import { migrate } from './migrate';
-import { MockVisionProvider, OpenAIVisionProvider } from './scan/vision';
+import { GeminiVisionProvider, MockVisionProvider, OpenAIVisionProvider } from './scan/vision';
 
 const config = loadConfig();
 const db = createDb(config.DATABASE_URL);
@@ -12,7 +12,9 @@ await migrate(db, console.log);
 const vision =
   config.VISION_PROVIDER === 'openai'
     ? new OpenAIVisionProvider(config.OPENAI_API_KEY!, config.OPENAI_VISION_MODEL)
-    : new MockVisionProvider();
+    : config.VISION_PROVIDER === 'gemini'
+      ? new GeminiVisionProvider(config.GEMINI_API_KEY!, config.GEMINI_VISION_MODEL)
+      : new MockVisionProvider();
 
 const app = await buildApp(
   {
@@ -27,7 +29,7 @@ const app = await buildApp(
 await app.listen({ port: config.PORT, host: config.HOST });
 if (vision.name === 'mock') {
   app.log.warn(
-    'Raf tarama sahte (mock) yanıtla çalışıyor. Gerçek tarama için VISION_PROVIDER=openai ve OPENAI_API_KEY girin.',
+    'Raf tarama sahte (mock) yanıtla çalışıyor. Gerçek tarama için VISION_PROVIDER=gemini/openai ve ilgili API anahtarını girin.',
   );
 }
 
