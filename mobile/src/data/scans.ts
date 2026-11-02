@@ -103,7 +103,9 @@ export async function runShelfScan(
     }
     return { kind: 'done', pendingId: id, count: result.items.length };
   } catch (err) {
-    if (isOffline(err) || (err instanceof ApiError && err.status >= 500)) {
+    // Kuyruğa yalnızca sunucuya hiç ulaşılamadığında alınır. Sunucu yanıt verip hata
+    // döndürdüyse (anahtar geçersiz, model yoğun) "internet yok" demek yanıltıcı olur.
+    if (isOffline(err)) {
       queueShelfPhoto(uri);
       return { kind: 'queued' };
     }
@@ -130,13 +132,15 @@ export async function processScanQueue() {
         `/scan/review?pending=${scan.id}`,
       );
     } catch (err) {
+      // Yalnızca bağlantı sorunu ve geçici yoğunluk kuyrukta bekler; sunucu ayarı hatası
+      // (geçersiz anahtar vb.) her turda tekrar denenmesin, kullanıcıya gösterilsin.
       const offline = isOffline(err);
-      const retryable = offline || (err instanceof ApiError && err.status >= 500);
+      const retryable = offline || (err instanceof ApiError && err.code === 'vision_busy');
       db.update(pendingScans)
         .set({ status: retryable ? 'queued' : 'failed', error: (err as Error).message })
         .where(eq(pendingScans.id, scan.id))
         .run();
-      if (offline) break;
+      if (retryable) break;
     } finally {
       notifyChange('pending_scans');
     }
@@ -179,4 +183,11 @@ export async function confirmScan(scanId: string, selections: ShelfSelection[]) 
   } catch {
     // İstatistik amaçlı; başarısız olursa kullanıcıya yansıtmaya gerek yok.
   }
+}
+
+/** İşlenemeyen taramayı yeniden kuyruğa alır ve hemen dener. */
+export async function retryPendingScan(id: string) {
+  db.update(pendingScans).set({ status: 'queued', error: null }).where(eq(pendingScans.id, id)).run();
+  notifyChange('pending_scans');
+  await processScanQueue();
 }

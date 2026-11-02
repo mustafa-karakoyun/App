@@ -50,14 +50,24 @@ ilk denemeler için ayrı derleme gerekmez.
 
 ## Gerçek raf taramayı açmak
 
-`server/.env`:
+`server/.env` (Gemini ya da OpenAI; ikisinden biri yeter):
 
 ```
+VISION_PROVIDER=gemini
+GEMINI_API_KEY=AIza...
+GEMINI_VISION_MODEL=gemini-2.5-flash
+
+# ya da
 VISION_PROVIDER=openai
 OPENAI_API_KEY=sk-...
-OPENAI_VISION_MODEL=gpt-4.1     # görsel girdi ve JSON şeması destekleyen herhangi bir model
+OPENAI_VISION_MODEL=gpt-4.1
+
 SCAN_MONTHLY_LIMIT=20           # ücretsiz planda aylık tarama hakkı
 ```
+
+Sunucuyu yeniden başlatınca günlükte `Raf tarama: gemini` görünmelidir. Anahtar geçersizse uygulama
+"sunucudaki görsel model anahtarı geçersiz" der; "Sunucuya ulaşılamadı" mesajı ise telefonun sunucuya hiç
+erişemediği anlamına gelir (Profil ekranının en altında uygulamanın kullandığı sunucu adresi yazar).
 
 Hangi modelin seçileceğine ve limitin kaç olacağına Faz 0 ölçümleri karar verir (aşağıda).
 `GOOGLE_BOOKS_API_KEY` boşsa Google Books anahtarsız sorulur. Bu durumda kota düşük kalır; gerçek kullanımda anahtar girin.

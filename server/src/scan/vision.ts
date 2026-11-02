@@ -23,6 +23,36 @@ export interface VisionUsage {
   output_tokens: number;
 }
 
+/**
+ * Görsel model hatasının türü: kullanıcıya doğru mesajı göstermek için.
+ * auth: anahtar geçersiz/yetkisiz · config: model adı yanlış · busy: kota/hız sınırı · other: diğer.
+ */
+export type VisionErrorKind = 'auth' | 'config' | 'busy' | 'other';
+
+export class VisionError extends Error {
+  constructor(
+    readonly kind: VisionErrorKind,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** Modelin döndürdüğü JSON'u doğrular; güven değeri aralık dışıysa sıkıştırır. */
+function parseShelf(text: string): ShelfOutput {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    throw new VisionError('other', 'Model geçerli JSON döndürmedi');
+  }
+  const r = raw as { books?: { confidence?: number }[] };
+  for (const b of r.books ?? []) {
+    if (typeof b.confidence === 'number') b.confidence = Math.min(1, Math.max(0, b.confidence));
+  }
+  return shelfOutputSchema.parse(raw);
+}
+
 export interface VisionProvider {
   readonly name: string;
   readShelf(image: Buffer, mimeType: string): Promise<ShelfOutput>;
@@ -79,25 +109,128 @@ export class OpenAIVisionProvider implements VisionProvider {
   }
 
   async readShelf(image: Buffer, mimeType: string): Promise<ShelfOutput> {
-    const response = await this.client.responses.create({
-      model: this.model,
-      input: [
-        {
-          role: 'user',
-          content: [
-            { type: 'input_text', text: SHELF_PROMPT },
-            { type: 'input_image', image_url: `data:${mimeType};base64,${image.toString('base64')}`, detail: 'high' },
-          ],
+    let response;
+    try {
+      response = await this.client.responses.create({
+        model: this.model,
+        input: [
+          {
+            role: 'user',
+            content: [
+              { type: 'input_text', text: SHELF_PROMPT },
+              { type: 'input_image', image_url: `data:${mimeType};base64,${image.toString('base64')}`, detail: 'high' },
+            ],
+          },
+        ],
+        text: {
+          format: { type: 'json_schema', name: 'shelf_books', schema: OPENAI_JSON_SCHEMA, strict: true },
         },
-      ],
-      text: {
-        format: { type: 'json_schema', name: 'shelf_books', schema: OPENAI_JSON_SCHEMA, strict: true },
-      },
-    });
+      });
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      const message = (err as Error).message;
+      if (status === 401 || status === 403) throw new VisionError('auth', message);
+      if (status === 404) throw new VisionError('config', message);
+      if (status === 429) throw new VisionError('busy', message);
+      throw new VisionError('other', message);
+    }
     this.lastUsage = response.usage
       ? { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens }
       : null;
-    return shelfOutputSchema.parse(JSON.parse(response.output_text));
+    return parseShelf(response.output_text);
+  }
+}
+
+// Gemini yapılandırılmış çıktı şeması (OpenAPI alt kümesi): null olabilen alanlar `nullable`.
+const GEMINI_SCHEMA = {
+  type: 'OBJECT',
+  required: ['books', 'unreadable_count'],
+  properties: {
+    books: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        required: ['position', 'raw_text', 'title', 'author', 'publisher', 'confidence'],
+        properties: {
+          position: { type: 'INTEGER' },
+          raw_text: { type: 'STRING' },
+          title: { type: 'STRING', nullable: true },
+          author: { type: 'STRING', nullable: true },
+          publisher: { type: 'STRING', nullable: true },
+          confidence: { type: 'NUMBER' },
+        },
+        propertyOrdering: ['position', 'raw_text', 'title', 'author', 'publisher', 'confidence'],
+      },
+    },
+    unreadable_count: { type: 'INTEGER' },
+  },
+} as const;
+
+interface GeminiResponse {
+  candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+  promptFeedback?: { blockReason?: string };
+  error?: { code?: number; message?: string; status?: string; details?: { reason?: string }[] };
+}
+
+/** Google Gemini (Generative Language API, REST). SDK yerine fetch: tek bir çağrı için yeterli. */
+export class GeminiVisionProvider implements VisionProvider {
+  readonly name = 'gemini';
+  lastUsage: VisionUsage | null = null;
+
+  constructor(
+    private readonly apiKey: string,
+    private readonly model: string,
+    private readonly fetchFn: typeof fetch = fetch,
+  ) {}
+
+  async readShelf(image: Buffer, mimeType: string): Promise<ShelfOutput> {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent`;
+    let res: Response;
+    try {
+      res = await this.fetchFn(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': this.apiKey },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: SHELF_PROMPT }, { inline_data: { mime_type: mimeType, data: image.toString('base64') } }],
+            },
+          ],
+          generationConfig: { responseMimeType: 'application/json', responseSchema: GEMINI_SCHEMA, temperature: 0 },
+        }),
+        signal: AbortSignal.timeout(90_000),
+      });
+    } catch (err) {
+      throw new VisionError('other', `Gemini'ye ulaşılamadı: ${(err as Error).message}`);
+    }
+
+    const body = (await res.json().catch(() => ({}))) as GeminiResponse;
+    if (!res.ok || body.error) {
+      const message = body.error?.message ?? `Gemini ${res.status}`;
+      const reasons = (body.error?.details ?? []).map((d) => d.reason);
+      if (res.status === 401 || res.status === 403 || reasons.includes('API_KEY_INVALID')) {
+        throw new VisionError('auth', message);
+      }
+      if (res.status === 404) throw new VisionError('config', message);
+      if (res.status === 429) throw new VisionError('busy', message);
+      throw new VisionError('other', message);
+    }
+
+    this.lastUsage = body.usageMetadata
+      ? {
+          input_tokens: body.usageMetadata.promptTokenCount ?? 0,
+          output_tokens: body.usageMetadata.candidatesTokenCount ?? 0,
+        }
+      : null;
+    const candidate = body.candidates?.[0];
+    const text = candidate?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
+    if (!text) {
+      const reason = body.promptFeedback?.blockReason ?? candidate?.finishReason ?? 'boş yanıt';
+      throw new VisionError('other', `Gemini yanıt vermedi (${reason})`);
+    }
+    return parseShelf(text);
   }
 }
 

@@ -6,7 +6,7 @@ import type { AppDeps } from '../app';
 import { recordAlias } from '../books/catalog';
 import { httpError } from '../errors';
 import { matchShelf, readShelf } from './pipeline';
-import type { ShelfOutput } from './vision';
+import { VisionError, type ShelfOutput } from './vision';
 
 function monthStart(now = new Date()): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -28,6 +28,32 @@ export async function getQuota(db: Pick<pg.Pool, 'query'>, userId: string, freeL
   // Premium için pratikte sınırsız; kötüye kullanıma karşı yine de bir tavan var.
   const limit = row.plan === 'premium' ? 1000 : freeLimit;
   return { used: Number(row.used), limit, resets_at: nextMonthStart().toISOString() };
+}
+
+/**
+ * Görsel model hatasını kullanıcıya anlamlı bir yanıta çevirir. Sunucu ayarı
+ * sorunları (anahtar, model adı) "internet yok" gibi görünmesin diye ayrı kodlarla döner.
+ */
+function visionHttpError(err: unknown) {
+  if (/Input buffer|unsupported image/i.test((err as Error).message)) {
+    return httpError(400, 'invalid_image', 'Fotoğraf okunamadı, tekrar çekmeyi dene');
+  }
+  if (err instanceof VisionError) {
+    if (err.kind === 'auth') {
+      return httpError(
+        502,
+        'vision_auth',
+        'Raf tarama şu an çalışmıyor: sunucudaki görsel model anahtarı geçersiz ya da yetkisiz.',
+      );
+    }
+    if (err.kind === 'config') {
+      return httpError(502, 'vision_config', 'Raf tarama şu an çalışmıyor: sunucudaki görsel model adı bulunamadı.');
+    }
+    if (err.kind === 'busy') {
+      return httpError(503, 'vision_busy', 'Görsel model şu an yoğun ya da kotası doldu. Biraz sonra tekrar dene.');
+    }
+  }
+  return httpError(502, 'vision_failed', 'Raf şu an okunamadı. Biraz sonra tekrar dene.');
 }
 
 const confirmSchema = z.object({
@@ -68,10 +94,7 @@ export async function scanRoutes(app: FastifyInstance, { db, providers, vision, 
         scanId,
         Date.now() - started,
       ]);
-      const isImageError = /Input buffer|unsupported image/i.test((err as Error).message);
-      throw isImageError
-        ? httpError(400, 'invalid_image', 'Fotoğraf okunamadı, tekrar çekmeyi dene')
-        : httpError(502, 'vision_failed', 'Raf şu an okunamadı. Fotoğraf kuyrukta kalacak, birazdan tekrar denenecek.');
+      throw visionHttpError(err);
     }
 
     const items = await matchShelf(db, providers, output);

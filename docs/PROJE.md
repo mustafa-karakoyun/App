@@ -50,7 +50,7 @@ Tasarımın etrafında döndüğü dört senaryo:
 ### Kullanıcının verdiği kararlar
 
 - **Kapsam:** MVP'nin tamamı (mobil + sunucu aynı depoda).
-- **Görsel model:** OpenAI. Anahtar girilene kadar sahte (mock) yanıt.
+- **Görsel model:** Önce OpenAI istendi; kullanıcı Gemini anahtarı alınca Gemini desteği de eklendi (`VISION_PROVIDER=gemini`). Anahtar girilene kadar sahte (mock) yanıt.
 - **Giriş:** Önce e-posta/şifre; Google ile giriş kodu hazır ama kapalı.
 - **Tasarım:** Yoğun kart yok, gözü yormayan, kağıt tonları + koyu yeşil/bordo vurgu, UX ön planda.
 - **Expo SDK:** 57.
@@ -174,7 +174,7 @@ kullanıcıya özeldir.
 ### Raf tarama hattı (`scan/`)
 
 1. **Görsel hazırlama:** Fotoğraf yönü düzeltilir, uzun kenar ~2000 px'e indirilir, JPEG'e sıkıştırılır (sharp).
-2. **Model:** OpenAI Responses API'ye görsel ve **katı JSON şeması** gönderilir. Kitap başına sıra, ham metin, başlık, yazar, yayınevi ve güven değeri döner. Prompt'ta "görmediğin kitabı ekleme" kuralı var.
+2. **Model:** Gemini (`generateContent`, `responseSchema`) ya da OpenAI (Responses API, katı JSON şeması); görsel ve şema gönderilir. Kitap başına sıra, ham metin, başlık, yazar, yayınevi ve güven değeri döner. Prompt'ta "görmediğin kitabı ekleme" kuralı var.
 3. **Parçalama:** Okunamayan sırt sayısı yüksekse fotoğraf yatayda üç örtüşen parçaya bölünüp yeniden sorulur, sonuçlar birleştirilir. Planın "ince ve eğik sırtlar" yedek planı.
 4. **Eşleştirme:** Önce `scan_aliases` (önceki onaylar), sonra katalog (pg_trgm), yetmezse Google Books. Adaylar `matchScore` ile puanlanır.
 5. **Sınıflandırma:**
@@ -323,6 +323,7 @@ Kullanılan bütün yerel modüller Expo Go'da hazır gelir; geliştirme için a
 | Bildirimden açılan ekranda "geri" çalışmıyordu | `goBack()`: geçmiş yoksa kütüphaneye gider |
 | İç içe dokunma alanları (satır içinde düğme) erişilebilirliği bozuyordu | Satır ve eylem kardeş öğelere ayrıldı |
 | Figma dosyası okunamadı (düzenleme izni yok) | Tasarım, aynı içeriği taşıyan artifact'tan okundu |
+| Gemini anahtarı girilince "internet yok, fotoğraf kuyrukta" deniyordu: sunucu yalnızca OpenAI biliyordu ve uygulama her sunucu hatasını bağlantı hatası sanıyordu | Gemini sağlayıcısı eklendi; model hataları türüne göre ayrıldı (`vision_auth`, `vision_config`, `vision_busy`); fotoğraf yalnızca sunucuya hiç ulaşılamazsa kuyruğa alınıyor; işlenemeyen taramalar kütüphanede "tekrar dene" bandıyla görünüyor |
 
 ---
 
@@ -345,7 +346,7 @@ Kullanılan bütün yerel modüller Expo Go'da hazır gelir; geliştirme için a
 
 1. **Telefonda deneme:** Expo Go (SDK 57) ile; README'deki "Hızlı başlangıç".
 2. **Faz 0:** Gerçek raf fotoğrafları ve 50 Türkçe ISBN ile ölçüm. Sonra `MATCH_THRESHOLDS` ve tarama kotası güncellenir.
-3. **OpenAI anahtarı:** `server/.env` → `VISION_PROVIDER=openai`.
+3. **Görsel model anahtarı:** `server/.env` → `VISION_PROVIDER=gemini` + `GEMINI_API_KEY` (ya da openai). Gerçek anahtarla ilk tarama henüz denenmedi.
 4. **Sunucuyu yayına alma:** `docker compose up -d`. Ardından `mobile/eas.json` içindeki adres güncellenip EAS ile derleme yapılır.
 5. **Sonraki sürüm:** "Sayfayı tara" (cihazda OCR, development build), Google ile giriş, Premium, istatistik kartları, CSV/Goodreads içe aktarma, ortak katalogda kitap bilgisi düzeltme.
 6. **Play Store:** Kişisel hesaplar için 12 test kullanıcısıyla 14 günlük kapalı test şartı (planın Faz 4'ü).

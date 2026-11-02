@@ -91,10 +91,11 @@ export function ShelfMode({ modeSwitcher }: { modeSwitcher: ReactNode }) {
       if (result.kind === 'queued') {
         toast({
           icon: 'cloud-offline-outline',
-          title: 'İnternet yok gibi görünüyor.',
-          message: 'Fotoğraf kuyruğa alındı, hazır olunca haber vereceğiz.',
+          title: 'Sunucuya ulaşılamadı.',
+          message:
+            'İnternet bağlantını ya da sunucunun açık olduğunu kontrol et. Fotoğraf kuyruğa alındı, bağlantı gelince işlenecek.',
           actionLabel: 'Tamam',
-          durationMs: 6000,
+          durationMs: 7000,
         });
         goBack();
         return;
@@ -181,7 +182,7 @@ export function ShelfMode({ modeSwitcher }: { modeSwitcher: ReactNode }) {
             <>
               <View style={{ gap: 6, alignItems: 'center' }}>
                 <AppText variant="title" color={cam.text}>
-                  Sırtlar okunaklı mı?
+                  {problem?.kind === 'error' ? 'Raf okunamadı' : 'Sırtlar okunaklı mı?'}
                 </AppText>
                 <AppText variant="small" color={problem ? cam.error : cam.muted} style={{ textAlign: 'center' }}>
                   {problem?.kind === 'error'
@@ -194,7 +195,7 @@ export function ShelfMode({ modeSwitcher }: { modeSwitcher: ReactNode }) {
               <View style={styles.actions}>
                 <Button title="Yeniden çek" kind="onDark" onPress={() => setPhoto(null)} style={styles.flex} />
                 <Button
-                  title={user ? 'Kitapları bul' : 'Giriş yap ve tara'}
+                  title={!user ? 'Giriş yap ve tara' : problem ? 'Tekrar dene' : 'Kitapları bul'}
                   kind="onDarkPrimary"
                   onPress={submit}
                   style={user ? styles.flex : { flex: 1.4 }}

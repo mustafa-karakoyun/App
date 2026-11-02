@@ -22,7 +22,7 @@ import { useDbQuery } from '@/db/changes';
 import { getKv, setKv } from '@/data/kv';
 import { listLibrary, recentAdd, statusCounts, type LibraryItem, type SortKey } from '@/data/library';
 import { searchNotes, userBooksWithQuotes } from '@/data/notes';
-import { listPendingScans } from '@/data/scans';
+import { listPendingScans, processScanQueue, retryPendingScan } from '@/data/scans';
 import { NoteItem } from '@/components/NoteItem';
 import { dueText, locative, STATUS_LABELS, STATUS_ORDER, untilText } from '@/lib/format';
 import { radius, space, useTheme } from '@/theme';
@@ -52,7 +52,9 @@ export default function LibraryScreen() {
   const quotedCount = useDbQuery(() => userBooksWithQuotes().size, [], ['notes', 'user_books']);
   const noteHits = useDbQuery(() => (search.trim().length >= 2 ? searchNotes(search) : []), [search], ['notes']);
   const recent = useDbQuery(() => recentAdd(), [], ['kv', 'user_books']);
-  const pendingScans = useDbQuery(() => listPendingScans().filter((s) => s.status !== 'failed'), [], ['pending_scans']);
+  const allScans = useDbQuery(() => listPendingScans(), [], ['pending_scans']);
+  const pendingScans = allScans.filter((s) => s.status !== 'failed');
+  const failedScans = allScans.filter((s) => s.status === 'failed');
 
   const filtered = !!search || !!status || !!location || withQuotes;
   const contentWidth = Math.min(width, 900) - space.lg * 2;
@@ -198,7 +200,17 @@ export default function LibraryScreen() {
           tone="warning"
           icon="time-outline"
           title="Raf fotoğrafı kuyrukta"
-          body="İnternet gelince işlenecek"
+          body="Sunucuya ulaşılınca işlenecek"
+          onPress={() => void processScanQueue()}
+        />
+      ) : null}
+      {failedScans.length > 0 ? (
+        <PendingBand
+          tone="accent"
+          icon="alert-circle-outline"
+          title={`${failedScans.length} raf taraması işlenemedi · tekrar dene`}
+          body={failedScans[0]!.error ?? 'Bilinmeyen hata'}
+          onPress={() => void retryPendingScan(failedScans[0]!.id)}
         />
       ) : null}
     </View>
@@ -390,30 +402,28 @@ function PendingBand({
   body,
   onPress,
 }: {
-  tone: 'primary' | 'warning';
-  icon: 'scan' | 'time-outline';
+  tone: 'primary' | 'warning' | 'accent';
+  icon: 'scan' | 'time-outline' | 'alert-circle-outline';
   title: string;
   body: string;
   onPress?: () => void;
 }) {
   const { c } = useTheme();
-  const fg = tone === 'primary' ? c.primary : c.warning;
+  const fg = tone === 'primary' ? c.primary : tone === 'accent' ? c.accent : c.warning;
+  const bg = tone === 'primary' ? c.primarySoft : tone === 'accent' ? c.accentSoft : c.warningSoft;
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
       onPress={onPress}
       disabled={!onPress}
-      style={({ pressed }) => [
-        styles.band,
-        { backgroundColor: tone === 'primary' ? c.primarySoft : c.warningSoft, opacity: pressed ? 0.8 : 1 },
-      ]}
+      style={({ pressed }) => [styles.band, { backgroundColor: bg, opacity: pressed ? 0.8 : 1 }]}
     >
       <Ionicons name={icon} size={24} color={fg} />
       <View style={{ flex: 1 }}>
         <AppText variant="sub" style={{ fontWeight: '600' }}>
           {title}
         </AppText>
-        <AppText variant="small" muted>
+        <AppText variant="small" muted numberOfLines={2}>
           {body}
         </AppText>
       </View>
